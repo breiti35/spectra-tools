@@ -81,4 +81,14 @@ Voraussetzung: Node.js (LTS empfohlen).
 Weitere Details zur Architektur und zum Code findest du in der [Agent.md](./Agent.md). Geplante Features sind im [BACKLOG.md](./BACKLOG.md) gelistet.
 
 ## Lizenz
-Dieses Projekt ist für die persönliche Nutzung und Weiterentwicklung gedacht.
+
+## 👨‍💻 Author & Philosophy
+
+**Developed by [breiti35](https://github.com/breiti35)**
+
+This project, `spectra-tools`, is the result of dedicated work to simplify spectral analysis tools.
+The logic and structure reflect a specific approach to handling data efficiently.
+
+If you use this tool or parts of its code, please respect the [MIT License](LICENSE) and keep the attribution to the original author.
+
+> *"Respect the code, respect the creator."*
