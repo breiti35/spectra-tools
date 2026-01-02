@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { DB } from './lib/db';
 import { translations } from './lib/i18n';
+import logo from './assets/logo.png';
 import Generator from './components/Generator';
 import Gallery from './components/Gallery';
 import Metadata from './components/Metadata';
@@ -22,10 +23,10 @@ function Sidebar({ activeTab, setActiveTab, isDark, toggleDark, t, appMode }) {
     <aside className="w-64 h-screen bg-slate-900 text-white flex flex-col fixed left-0 top-0 z-50 border-r border-slate-800">
       <div className="p-6 border-b border-slate-800">
         <div className="flex items-center gap-3">
-            <span className="text-2xl">🎨</span>
+            <img src={logo} alt="Spectra Logo" className="w-11 h-11 object-contain" />
             <h1 className="text-xl font-bold tracking-tight text-white">Spectra Tools</h1>
         </div>
-        <div className="text-[10px] text-slate-400 mt-1 ml-9 font-mono uppercase tracking-widest opacity-70">{t.version} 0.1.0</div>
+        <div className="text-[10px] text-slate-400 mt-1 ml-14 font-mono uppercase tracking-widest opacity-70">{t.version} 0.1.1</div>
       </div>
       
       <nav className="flex-1 py-6 px-3 space-y-2">

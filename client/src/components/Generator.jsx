@@ -15,7 +15,7 @@ const SectionTitle = ({ children, isOpen, onClick }) => (
 
 const ControlCard = ({ label, children }) => (
   <div className="bg-gray-50 dark:bg-zinc-800/50 p-3 rounded-lg border border-gray-200 dark:border-zinc-700 hover:border-blue-400/30 transition-colors">
-    <label className="block text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-2">{label}</label>
+    {label && <label className="block text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-2">{label}</label>}
     {children}
   </div>
 );
@@ -37,6 +37,7 @@ export default function Generator({ initialData, onDataLoaded, t }) {
   const [output, setOutput] = useState({ text: t.outputPlaceholder, tags: [], seed: null });
   const [isProMode, setIsProMode] = useState(false);
   const [sectionsOpen, setSectionsOpen] = useState({ basic: true, camera: false, env: false, char: false });
+  const [history, setHistory] = useState(JSON.parse(localStorage.getItem('prompt_history') || '[]'));
   
   const [formData, setFormData] = useState({
     promptIdea: "",
@@ -90,19 +91,29 @@ export default function Generator({ initialData, onDataLoaded, t }) {
   const handleChange = (field, value) => setFormData(prev => ({ ...prev, [field]: value }));
   const toggleSection = (sec) => setSectionsOpen(prev => ({ ...prev, [sec]: !prev[sec] }));
 
+  const addToHistory = (item) => {
+    const newHistory = [item, ...history.filter(h => h.text !== item.text)].slice(0, 5);
+    setHistory(newHistory);
+    localStorage.setItem('prompt_history', JSON.stringify(newHistory));
+  };
+
   const generate = () => {
     const finalSeed = resolveSeed(formData.seed, formData.seedLock);
     const result = buildPrompt({ ...formData, seed: finalSeed });
-    setOutput({ text: result.prompt, tags: result.tags || [], seed: result.seed });
+    const newOutput = { text: result.prompt, tags: result.tags || [], seed: result.seed };
+    setOutput(newOutput);
     handleChange('seed', result.seed);
+    addToHistory(newOutput);
   };
 
   const handleEnhance = () => {
     if(!formData.promptIdea) return alert(t.ideaError);
     const seed = resolveSeed(formData.seed, formData.seedLock);
     const enhanced = enhancePrompt(formData.promptIdea, { ...formData, seed });
-    setOutput({ text: enhanced, tags: ["Enhanced", "Magic"], seed: seed });
+    const newOutput = { text: enhanced, tags: ["Enhanced", "Magic"], seed: seed };
+    setOutput(newOutput);
     handleChange('seed', seed);
+    addToHistory(newOutput);
   };
 
   const handleSurprise = () => {
@@ -110,8 +121,23 @@ export default function Generator({ initialData, onDataLoaded, t }) {
     setFormData(prev => ({ ...prev, seed: r, promptIdea: "", realism: Math.floor(Math.random()*10)+1, randomness: Math.floor(Math.random()*10)+1, preset: "", camera: "" }));
     setTimeout(() => {
         const result = buildPrompt({ ...formData, seed: r, promptIdea: "", realism: 5 }); 
-        setOutput({ text: result.prompt, tags: ["Surprise"], seed: r });
+        const newOutput = { text: result.prompt, tags: ["Surprise"], seed: r };
+        setOutput(newOutput);
+        addToHistory(newOutput);
     }, 50);
+  };
+
+  const handleDiceRoll = () => {
+    const ideas = data.promptIdeas || [];
+    if (ideas.length > 0) {
+        const randomIdea = ideas[Math.floor(Math.random() * ideas.length)];
+        handleChange('promptIdea', randomIdea);
+    }
+  };
+
+  const loadFromHistory = (h) => {
+    setOutput(h);
+    if (h.seed) handleChange('seed', h.seed);
   };
 
   const handleSave = async () => {
@@ -122,14 +148,26 @@ export default function Generator({ initialData, onDataLoaded, t }) {
     } catch(e) { alert(t.saveError); }
   };
 
-  const copyToClipboard = () => navigator.clipboard.writeText(output.text);
+  const copyToClipboard = () => {
+    navigator.clipboard.writeText(output.text);
+    alert(t.copySuccess);
+  };
 
   return (
     <div className="space-y-6 animate-fade-in">
       
       {/* 1. INPUT */}
-      <div className="bg-white dark:bg-zinc-800 p-6 rounded-2xl shadow-sm border border-gray-100 dark:border-zinc-700 transition-colors">
-        <label className="block text-sm font-bold text-gray-500 dark:text-gray-400 mb-2">{t.promptIdea}</label>
+      <div className="bg-white dark:bg-zinc-800 p-6 rounded-2xl shadow-sm border border-gray-100 dark:border-zinc-700 transition-colors relative">
+        <div className="flex justify-between items-center mb-2">
+            <label className="block text-sm font-bold text-gray-500 dark:text-gray-400">{t.promptIdea}</label>
+            <button 
+                onClick={handleDiceRoll}
+                title={t.randomIdea}
+                className="p-1.5 bg-gray-50 dark:bg-zinc-900 hover:bg-blue-50 dark:hover:bg-blue-900/20 text-blue-600 dark:text-blue-400 rounded-lg transition-all border border-gray-100 dark:border-zinc-700 active:rotate-12"
+            >
+                🎲
+            </button>
+        </div>
         <textarea
           className="w-full p-4 bg-gray-50 dark:bg-zinc-900 border-2 border-transparent focus:border-blue-500/50 focus:bg-white dark:focus:bg-zinc-950 rounded-xl transition-all outline-none resize-none text-lg text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-600"
           rows="2"
@@ -153,9 +191,16 @@ export default function Generator({ initialData, onDataLoaded, t }) {
       {/* 2. OUTPUT */}
       <div className="bg-white dark:bg-zinc-800 rounded-2xl shadow-lg shadow-blue-500/5 border border-blue-500/10 dark:border-zinc-700 overflow-hidden relative group transition-colors">
           <div className="absolute top-0 left-0 w-1 h-full bg-blue-500"></div>
-          <div className="p-8">
-              <div className="min-h-[80px] text-lg leading-relaxed text-slate-700 dark:text-gray-200 font-medium whitespace-pre-wrap">
-                  {output.text}
+          <div className="p-8 pb-4">
+              <div className="flex justify-between items-start mb-2">
+                  <div className="min-h-[80px] text-lg leading-relaxed text-slate-700 dark:text-gray-200 font-medium whitespace-pre-wrap flex-1">
+                      {output.text}
+                  </div>
+                  {output.text && !output.text.includes(t.outputPlaceholder.substring(0, 10)) && (
+                      <div className="bg-gray-100 dark:bg-zinc-900 px-2 py-1 rounded text-[10px] font-bold text-gray-400 dark:text-gray-500 ml-4 uppercase tracking-widest">
+                          {output.text.split(/\s+/).filter(w => w.length > 0).length} {t.tokens}
+                      </div>
+                  )}
               </div>
               <div className="flex flex-wrap gap-2 mt-4">
                   {output.tags.map((t, i) => (
@@ -166,6 +211,23 @@ export default function Generator({ initialData, onDataLoaded, t }) {
                   {output.seed && <span className="px-2 py-1 bg-gray-50 dark:bg-zinc-700 text-gray-500 dark:text-gray-400 text-xs border border-gray-200 dark:border-zinc-600 rounded">Seed: {output.seed}</span>}
               </div>
           </div>
+
+          {/* History Snippet */}
+          {history.length > 0 && (
+              <div className="px-8 pb-4 flex items-center gap-3 overflow-x-auto custom-scrollbar">
+                  <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest whitespace-nowrap">{t.history}:</span>
+                  {history.map((h, i) => (
+                      <button 
+                        key={i} 
+                        onClick={() => loadFromHistory(h)}
+                        title={h.text}
+                        className="px-3 py-1 bg-gray-50 dark:bg-zinc-900 border border-gray-100 dark:border-zinc-700 rounded-full text-[10px] text-gray-500 dark:text-gray-400 whitespace-nowrap hover:border-blue-500 dark:hover:border-blue-500 transition-colors max-w-[120px] truncate"
+                      >
+                          {h.text}
+                      </button>
+                  ))}
+              </div>
+          )}
 
           <div className="bg-gray-50 dark:bg-zinc-900/50 px-6 py-4 border-t border-gray-100 dark:border-zinc-700 flex items-center justify-between gap-4">
                <div className="flex gap-2">
@@ -231,7 +293,21 @@ export default function Generator({ initialData, onDataLoaded, t }) {
                 </div>
             )}
              <div className="mt-6 pt-4 border-t border-gray-100 dark:border-zinc-700">
-                <ControlCard label={t.negativePrompt}>
+                <div className="flex justify-between items-center mb-2">
+                    <label className="text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider">{t.negativePrompt}</label>
+                    <div className="flex gap-1">
+                        {Object.keys(data.negativePresets).map(p => (
+                            <button 
+                                key={p}
+                                onClick={() => handleChange('negative', data.negativePresets[p])}
+                                className="text-[10px] font-bold px-2 py-1 bg-gray-100 dark:bg-zinc-900 text-gray-500 dark:text-gray-400 rounded hover:bg-red-50 dark:hover:bg-red-900/20 hover:text-red-500 transition-all border border-gray-200 dark:border-zinc-700 uppercase"
+                            >
+                                {p}
+                            </button>
+                        ))}
+                    </div>
+                </div>
+                <ControlCard>
                     <input type="text" value={formData.negative} onChange={e => handleChange('negative', e.target.value)} placeholder={t.negativePlaceholder} className="w-full text-sm py-1 bg-transparent focus:outline-none text-red-500 placeholder-red-200 dark:placeholder-red-900/50" />
                 </ControlCard>
              </div>

@@ -284,5 +284,27 @@ export const data = {
         "blue and pink tones"
       ]
     }
+  },
+  promptIdeas: [
+    "A futuristic city with flying cars and neon signs",
+    "A serene zen garden with cherry blossoms falling",
+    "A post-apocalyptic wasteland with overgrown ruins",
+    "A magical library with floating books and glowing orbs",
+    "A cyberpunk street food vendor in the rain",
+    "A cozy cottage in a snowy forest at twilight",
+    "A steampunk airship soaring above the clouds",
+    "A mysterious underwater city with bioluminescent creatures",
+    "A vibrant market in a desert oasis",
+    "A high-tech laboratory with robots and holograms",
+    "A medieval castle on a floating island",
+    "A noir detective office with shadows and smoke",
+    "A fantasy forest with giant mushrooms and fairies",
+    "A space station orbiting a distant planet",
+    "A retro diner with classic cars and jukeboxes"
+  ],
+  negativePresets: {
+    universal: "lowres, text, error, missing fingers, extra digit, fewer digits, cropped, worst quality, low quality, normal quality, jpeg artifacts, signature, watermark, username, blurry",
+    realistic: "photorealistic, (deformed, distorted, disfigured:1.3), poorly drawn, bad anatomy, wrong anatomy, extra limb, missing limb, floating limbs, (mutated hands and fingers:1.4), disconnected limbs, mutation, mutated, ugly, disgusting, blurry, amputation, tattoo, makeup",
+    artistic: "canvas frame, cartoon, 3d, video game, anime, sketches, (worst quality:2), (low quality:2), (normal quality:2), lowres, normal quality, ((monochrome)), ((grayscale)), skin spots, acnes, skin blemishes, bad anatomy, Girl, loli, young, large breasts"
   }
 };

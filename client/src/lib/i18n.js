@@ -29,6 +29,10 @@ export const translations = {
     ideaError: "Bitte gib erst eine Idee ein!",
     outputPlaceholder: "Dein Prompt erscheint hier...",
     random: "🎲 Zufällig",
+    history: "Verlauf",
+    load: "Laden",
+    randomIdea: "Zufällige Idee",
+    tokens: "Tokens",
 
     // Settings Sections
     basisConfig: "Basis-Konfiguration",
@@ -51,6 +55,7 @@ export const translations = {
     clothing: "Kleidung",
     negativePrompt: "Negative Prompt",
     negativePlaceholder: "Dinge, die NICHT im Bild sein sollen...",
+    negPresets: "Presets",
 
     // Metadata
     analysisResult: "Analyse Ergebnis",
@@ -176,6 +181,10 @@ export const translations = {
     ideaError: "Please enter an idea first!",
     outputPlaceholder: "Your prompt will appear here...",
     random: "🎲 Random",
+    history: "History",
+    load: "Load",
+    randomIdea: "Random Idea",
+    tokens: "Tokens",
 
     // Settings Sections
     basisConfig: "Base Configuration",
@@ -198,6 +207,7 @@ export const translations = {
     clothing: "Clothing",
     negativePrompt: "Negative Prompt",
     negativePlaceholder: "Things that should NOT be in the image...",
+    negPresets: "Presets",
 
     // Metadata
     analysisResult: "Analysis Result",
