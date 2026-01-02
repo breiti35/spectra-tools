@@ -28,7 +28,7 @@ function Sidebar({ activeTab, setActiveTab, isDark, toggleDark, t, appMode, hasC
             <img src={logo} alt="Spectra Logo" className="w-11 h-11 object-contain" />
             <h1 className="text-xl font-bold tracking-tight text-white">Spectra Tools</h1>
         </div>
-        <div className="text-[10px] text-slate-400 mt-1 ml-14 font-mono uppercase tracking-widest opacity-70">{t.version} 0.1.2</div>
+        <div className="text-[10px] text-slate-400 mt-1 ml-14 font-mono uppercase tracking-widest opacity-70">{t.version} 0.1.3</div>
       </div>
       
       <nav className="flex-1 py-6 px-3 space-y-2">
@@ -48,13 +48,13 @@ function Sidebar({ activeTab, setActiveTab, isDark, toggleDark, t, appMode, hasC
         ))}
       </nav>
 
-      <div className="p-4 border-t border-slate-800">
+      <div className="p-4 border-t border-slate-800 flex justify-center">
         <button 
             onClick={toggleDark}
-            className="w-full flex items-center gap-4 px-4 py-3 rounded-xl text-slate-400 hover:text-white hover:bg-slate-800 transition-all"
+            title={isDark ? t.lightMode : t.darkMode}
+            className="p-3 rounded-xl text-slate-400 hover:text-white hover:bg-slate-800 transition-all border border-slate-800"
         >
-          <span>{isDark ? '☀️' : '🌙'}</span>
-          <span className="font-medium">{isDark ? t.lightMode : t.darkMode}</span>
+          <span className="text-xl">{isDark ? '☀️' : '🌙'}</span>
         </button>
       </div>
     </aside>

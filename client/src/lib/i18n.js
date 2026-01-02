@@ -19,8 +19,10 @@ export const translations = {
     runAsAdmin: "Als Administrator starten",
     comfyStatus: "Status",
     comfyModels: "Installierte Modelle",
-    startComfy: "ComfyUI starten",
-    comfyRunning: "ComfyUI läuft",
+            startComfy: "ComfyUI starten",
+            stopComfy: "ComfyUI stoppen",
+            comfyRunning: "ComfyUI läuft",
+    
     comfyOffline: "ComfyUI ist offline",
     comfyDesc: "Verwalte und starte deine ComfyUI-Instanz direkt von hier.",
     comfyPathPlaceholder: "z.B. C:\\KI\\ComfyUI_windows_portable",
@@ -150,6 +152,8 @@ export const translations = {
     dbCleared: "Datenbank geleert.",
     language: "Sprache",
     languageSub: "Wähle deine bevorzugte Sprache.",
+    lightMode: "Hell",
+    darkMode: "Dunkel",
 
     // Folder Browser
     chooseFolder: "Ordner wählen",
@@ -187,6 +191,7 @@ export const translations = {
         
         comfyModels: "Installed Models",
         startComfy: "Start ComfyUI",
+        stopComfy: "Stop ComfyUI",
         comfyRunning: "ComfyUI is running",
         comfyOffline: "ComfyUI is offline",
         comfyDesc: "Manage and start your ComfyUI instance directly from here.",
@@ -317,6 +322,8 @@ export const translations = {
     dbCleared: "Database cleared.",
     language: "Language",
     languageSub: "Choose your preferred language.",
+    lightMode: "Light",
+    darkMode: "Dark",
 
     // Folder Browser
     chooseFolder: "Select Folder",

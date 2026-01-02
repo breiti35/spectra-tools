@@ -1,6 +1,6 @@
 {
   "name": "pormt",
-  "version": "0.1.2",
+  "version": "0.1.3",
   "description": "**Spectra Tools** ist eine All-in-One-Suite für KI-Bildgenerierungs-Workflows. Diese Webanwendung vereint leistungsstarke Tools zur Prompt-Erstellung, Bildanalyse und Verwaltung in einer modernen, benutzerfreundlichen Oberfläche.",
   "main": "index.js",
   "scripts": {

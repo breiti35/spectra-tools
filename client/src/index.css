@@ -35,3 +35,16 @@
 .custom-scrollbar::-webkit-scrollbar-thumb:hover {
   @apply bg-gray-400 dark:bg-zinc-600;
 }
+
+.custom-scrollbar-console::-webkit-scrollbar {
+  width: 6px;
+}
+.custom-scrollbar-console::-webkit-scrollbar-track {
+  @apply bg-transparent;
+}
+.custom-scrollbar-console::-webkit-scrollbar-thumb {
+  @apply bg-gray-200 dark:bg-zinc-800 rounded-full;
+}
+.custom-scrollbar-console::-webkit-scrollbar-thumb:hover {
+  @apply bg-gray-300 dark:bg-zinc-700;
+}

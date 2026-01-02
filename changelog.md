@@ -1,6 +1,20 @@
-# Changelog - Version 0.1.2
+# Changelog - Version 0.1.3
 
 Alle aktuellen Änderungen und Optimierungen in der Übersicht.
+
+## [0.1.3] - 2026-01-02
+
+### ✨ Neue Features
+- **Integrierte ComfyUI Konsole:** Echtzeit-Anzeige der Konsolenausgabe direkt im Spectra Tools Dashboard (Web-Terminal).
+- **Robuster Prozess-Stopp:** Neue Kill-Logik, die den ComfyUI-Prozess zuverlässig über den belegten Port (8188) beendet.
+- **Start-Methoden:** Unterstützung für verschiedene `.bat`-Dateien der portablen ComfyUI-Version.
+- **UI Branding:** Browser-Tab Titel auf "Spectra Tools" geändert und Projekt-Logo als Favicon integriert.
+
+### 🛠️ Optimierungen & Fixes
+- **Console UX:** Auto-Scroll auf den Log-Container begrenzt (kein Springen der gesamten Seite mehr).
+- **Theme-Support:** Terminal-Konsole für den Hellmodus optimiert (helles Design statt komplett schwarz).
+- **Kompakter Mode-Toggle:** Der Dark/Light-Mode Button wurde verkleinert und platzsparender gestaltet.
+- **Bugfixes:** Synchronisation beim Leeren der Konsole verbessert.
 
 ## [0.1.2] - 2026-01-02
 

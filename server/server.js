@@ -203,6 +203,18 @@ app.patch('/api/gallery/:id/favorite', (req, res) => {
 
 // --- COMFYUI MANAGEMENT ---
 let comfyProcess = null;
+let comfyLogs = [];
+
+function addLog(data) {
+    const lines = data.toString().split('\n');
+    lines.forEach(line => {
+        if (line.trim()) {
+            comfyLogs.push(`[${new Date().toLocaleTimeString()}] ${line.trim()}`);
+        }
+    });
+    // Nur die letzten 100 Zeilen behalten
+    if (comfyLogs.length > 100) comfyLogs = comfyLogs.slice(-100);
+}
 
 // Hilfsfunktion: Prüft ob ein Port offen ist
 function isPortOpen(port, host = '127.0.0.1') {
@@ -266,21 +278,37 @@ app.post('/api/comfy/start', async (req, res) => {
         if (args) finalArgs.push(...args.split(' '));
 
         try {
-            const { exec } = require('child_process');
-            
-            // Fix: PowerShell ArgumentList korrekt formatieren
-            // Wir nutzen ein Array von Strings, die in Anführungszeichen stehen
-            const formattedArgs = finalArgs.map(a => `\\"${a}\\"`).join(',');
-            const adminFlag = asAdmin ? "-Verb RunAs" : "";
-            
-            const startCmd = `powershell -Command "Start-Process -FilePath '${command}' ${finalArgs.length > 0 ? `-ArgumentList ${formattedArgs}` : ''} -WorkingDirectory '${comfyPath}' ${adminFlag}"`;
+            const { exec, spawn } = require('child_process');
+            comfyLogs = [`[SYSTEM] Starte ComfyUI (Method: ${method})...`];
 
-            exec(startCmd, (error) => {
-                if (error) console.error(`ComfyUI Start Fehler: ${error}`);
-            });
+            if (asAdmin) {
+                // ADMIN MODUS: Externes Fenster (Logs nicht direkt abfangbar)
+                const psArgs = finalArgs.map(a => `\\"${a}\\"`).join(',');
+                const adminFlag = "-Verb RunAs";
+                const startCmd = `powershell -Command "Start-Process -FilePath '${command}' ${finalArgs.length > 0 ? `-ArgumentList ${formattedArgs}` : ''} -WorkingDirectory '${comfyPath}' ${adminFlag}"`;
+                
+                exec(startCmd, (error) => {
+                    if (error) console.error(`ComfyUI Start Fehler: ${error}`);
+                });
+                comfyProcess = { pid: 'external' };
+                comfyLogs.push("[SYSTEM] Gestartet im Admin-Modus. Logs im externen Fenster.");
+            } else {
+                // NORMALER MODUS: Wir fangen den Output ab!
+                comfyProcess = spawn(command, finalArgs, {
+                    cwd: comfyPath,
+                    shell: true
+                });
 
-            comfyProcess = { pid: 'external', killed: false };
-            res.json({ success: true, message: "ComfyUI wird gestartet...", pid: 'external' });
+                comfyProcess.stdout.on('data', (data) => addLog(data));
+                comfyProcess.stderr.on('data', (data) => addLog(data));
+                
+                comfyProcess.on('close', (code) => {
+                    comfyLogs.push(`[SYSTEM] Prozess mit Code ${code} beendet.`);
+                    comfyProcess = null;
+                });
+            }
+
+            res.json({ success: true, message: "ComfyUI wird gestartet...", pid: 'active' });
         } catch (e) {
             res.status(500).json({ error: e.message });
         }
@@ -289,13 +317,38 @@ app.post('/api/comfy/start', async (req, res) => {
 });
 
 app.get('/api/comfy/status', async (req, res) => {
-    // Wir prüfen standardmäßig Port 8188
     const isOpen = await isPortOpen(8188);
-    
-    // Wenn der Port zu ist, löschen wir auch unsere interne Referenz
     if (!isOpen) comfyProcess = null;
-    
     res.json({ running: isOpen });
+});
+
+app.get('/api/comfy/logs', (req, res) => {
+    res.json({ logs: comfyLogs });
+});
+
+app.post('/api/comfy/logs/clear', (req, res) => {
+    comfyLogs = [`[SYSTEM] Konsole geleert am ${new Date().toLocaleTimeString()}`];
+    res.json({ success: true });
+});
+
+app.post('/api/comfy/stop', async (req, res) => {
+    const { exec } = require('child_process');
+    
+    comfyLogs.push("[SYSTEM] Sende Stopp-Befehl...");
+
+    // 1. Versuch: Den Prozess über den Port 8188 finden und killen (Am sichersten unter Windows)
+    const killCmd = `powershell -Command "Get-NetTCPConnection -LocalPort 8188 -ErrorAction SilentlyContinue | Select-Object -ExpandProperty OwningProcess | ForEach-Object { Stop-Process -Id $_ -Force -ErrorAction SilentlyContinue }"`;
+
+    exec(killCmd, (err) => {
+        // 2. Versuch: Falls wir noch eine interne PID haben, diese ebenfalls killen
+        if (comfyProcess && comfyProcess.pid && comfyProcess.pid !== 'external') {
+            exec(`taskkill /pid ${comfyProcess.pid} /T /F`, () => {});
+        }
+
+        comfyProcess = null;
+        comfyLogs.push("[SYSTEM] ComfyUI wurde beendet.");
+        res.json({ success: true });
+    });
 });
 
 app.post('/api/comfy/models', (req, res) => {
