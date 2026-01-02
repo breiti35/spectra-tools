@@ -1,6 +1,25 @@
-# Changelog - Version 0.1.1
+# Changelog - Version 0.1.2
 
 Alle aktuellen Änderungen und Optimierungen in der Übersicht.
+
+## [0.1.2] - 2026-01-02
+
+### ✨ Neue Features
+- **ComfyUI Integration:**
+    - Direktes Starten von ComfyUI aus Spectra Tools heraus.
+    - Unterstützung für portable Versionen und Batch-Dateien (`run_nvidia_gpu.bat`).
+    - Echtzeit-Statusüberwachung via Port-Check (Port 8188).
+    - Modell-Browser für installierte Checkpoints im ComfyUI-Ordner.
+    - Option "Als Administrator starten" für Windows-Kompatibilität hinzugefügt.
+- **Projekt Dokumentation:**
+    - `Agent.md`: Tiefgreifende technische Dokumentation für KI-Agenten.
+    - `BACKLOG.md`: Strukturierte Liste für zukünftige Optimierungen und Features.
+
+### 🛠️ Optimierungen & Fixes
+- **Windows Prozess-Management:** Umstellung auf PowerShell `Start-Process`, um ComfyUI in einem sichtbaren Fenster zu starten (bessere Fehlersuche).
+- **Backend Stabilität:** Verbesserte Pfad-Erkennung und Fehlerbehandlung beim Ausführen externer Programme.
+- **UI/UX:** Dynamische Sidebar-Navigation (ComfyUI erscheint nur bei konfiguriertem Pfad).
+- **Bugfixes:** JSX-Syntaxfehler in den Einstellungen behoben.
 
 ## [0.1.1] - 2026-01-02
 

@@ -2,19 +2,79 @@ import React, { useState, useEffect } from 'react';
 import { DB } from '../lib/db';
 import FolderBrowser from './FolderBrowser';
 
-export default function Settings({ lang, setLang, t, appMode }) {
+export default function Settings({ lang, setLang, t, appMode, onConfigChange }) {
 
   const [folders, setFolders] = useState([]);
 
   const [showBrowser, setShowBrowser] = useState(false);
 
+  const [comfyPath, setComfyPath] = useState('');
+
+      const [comfyArgs, setComfyArgs] = useState('');
+
+      const [comfyAdmin, setComfyAdmin] = useState(false);
+
+      const [comfyMethod, setComfyMethod] = useState('default');
+
+    
+
+      useEffect(() => {
+
+        if (appMode === 'local') {
+
+            loadFolders();
+
+            loadComfyConfig();
+
+        }
+
+      }, [appMode]);
+
+    
+
+      const loadComfyConfig = async () => {
+
+        const p = await DB.getConfig('comfyPath');
+
+        const a = await DB.getConfig('comfyArgs');
+
+        const adm = await DB.getConfig('comfyAdmin');
+
+        const meth = await DB.getConfig('comfyMethod');
+
+        if(p) setComfyPath(p);
+
+        if(a) setComfyArgs(a);
+
+        if(adm) setComfyAdmin(adm === 'true');
+
+        if(meth) setComfyMethod(meth);
+
+      };
+
+    
+
+      const handleSaveComfy = async () => {
+
+          await DB.setConfig('comfyPath', comfyPath);
+
+          await DB.setConfig('comfyArgs', comfyArgs);
+
+          await DB.setConfig('comfyAdmin', comfyAdmin ? 'true' : 'false');
+
+          await DB.setConfig('comfyMethod', comfyMethod);
+
+          if(onConfigChange) onConfigChange('comfyPath', comfyPath);
+
+          alert(t.saved);
+
+      };
+
+    
+
+  
 
 
-  useEffect(() => {
-
-    if (appMode === 'local') loadFolders();
-
-  }, [appMode]);
 
 
 
@@ -382,25 +442,121 @@ export default function Settings({ lang, setLang, t, appMode }) {
 
 
 
-                          )}
+                                                    )}
 
 
 
-                      </div>
+                          
 
 
 
-                  </div>
+                                                </div>
 
 
 
-              )}
+                          
 
 
 
-       
+                                            </div>
 
 
+
+                          
+
+
+
+                                        )}
+
+
+
+                          
+
+
+
+                          
+
+
+
+                          
+
+
+
+                                 {/* COMFYUI CONFIG */}
+
+
+
+                          
+       {appMode === 'local' && (
+           <div className="bg-white dark:bg-zinc-800 p-8 rounded-3xl border border-gray-100 dark:border-zinc-700 shadow-sm transition-colors">
+               <div className="flex items-center gap-4 mb-6">
+                   <span className="text-3xl">🧩</span>
+                   <div>
+                       <h3 className="text-xl font-bold text-gray-800 dark:text-white">{t.comfyui}</h3>
+                       <p className="text-gray-500 dark:text-gray-400 text-sm">{t.comfyDesc}</p>
+                   </div>
+               </div>
+
+               <div className="space-y-4">
+                   <div className="space-y-2">
+                       <label className="text-xs font-bold text-gray-400 uppercase tracking-widest">{t.comfyPath}</label>
+                       <div className="flex gap-2">
+                            <input 
+                                type="text" 
+                                value={comfyPath}
+                                onChange={e => setComfyPath(e.target.value)}
+                                placeholder={t.comfyPathPlaceholder}
+                                className="flex-1 bg-gray-50 dark:bg-zinc-900 border border-gray-100 dark:border-zinc-700 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/50 dark:text-white"
+                            />
+                       </div>
+                   </div>
+
+                   <div className="space-y-2">
+                       <label className="text-xs font-bold text-gray-400 uppercase tracking-widest">{t.comfyMethod}</label>
+                       <select 
+                           value={comfyMethod}
+                           onChange={e => setComfyMethod(e.target.value)}
+                           className="w-full bg-gray-50 dark:bg-zinc-900 border border-gray-100 dark:border-zinc-700 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/50 dark:text-white"
+                       >
+                           <option value="default">{t.methodDefault}</option>
+                           <option value="nvidia">run_nvidia_gpu.bat</option>
+                           <option value="nvidia_fast">run_nvidia_gpu_fast_fp16_accumulation.bat</option>
+                       </select>
+                   </div>
+
+                   <div className="space-y-2">
+                       <label className="text-xs font-bold text-gray-400 uppercase tracking-widest">{t.comfyArgs}</label>
+                       <input 
+                           type="text" 
+                           value={comfyArgs}
+                           onChange={e => setComfyArgs(e.target.value)}
+                           placeholder="--highvram --preview-method auto"
+                           className="w-full bg-gray-50 dark:bg-zinc-900 border border-gray-100 dark:border-zinc-700 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/50 dark:text-white"
+                       />
+                   </div>
+
+                   <div className="flex items-center gap-3 bg-gray-50 dark:bg-zinc-900 p-4 rounded-xl border border-gray-100 dark:border-zinc-700">
+                        <input 
+                            type="checkbox" 
+                            id="comfyAdmin"
+                            checked={comfyAdmin}
+                            onChange={e => setComfyAdmin(e.target.checked)}
+                            className="w-5 h-5 accent-blue-600"
+                        />
+                        <label htmlFor="comfyAdmin" className="text-sm font-bold text-gray-700 dark:text-gray-200 cursor-pointer select-none">
+                            🛡️ {t.runAsAdmin}
+                        </label>
+                   </div>
+
+                   <button 
+                       onClick={handleSaveComfy}
+                       className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded-xl shadow-lg shadow-blue-500/20 transition-all active:scale-[0.98]"
+                   >
+                       {t.save}
+                   </button>
+               </div>
+           </div>
+       )}
 
        {/* BACKUP */}
 

@@ -8,13 +8,15 @@ import Metadata from './components/Metadata';
 import Calculator from './components/Calculator';
 import Library from './components/Library';
 import Settings from './components/Settings';
+import ComfyManager from './components/ComfyManager';
 
-function Sidebar({ activeTab, setActiveTab, isDark, toggleDark, t, appMode }) {
+function Sidebar({ activeTab, setActiveTab, isDark, toggleDark, t, appMode, hasComfy }) {
   const menuItems = [
     { id: 'generator', label: t.generator, icon: '⚡' },
     { id: 'metadata', label: t.metadata, icon: '🔍' },
     { id: 'calculator', label: t.calculator, icon: '🧮' },
     ...(appMode === 'local' ? [{ id: 'gallery', label: t.gallery, icon: '🖼️' }] : []),
+    ...(hasComfy ? [{ id: 'comfyui', label: t.comfyui, icon: '🧩' }] : []),
     { id: 'library', label: t.library, icon: '📚' },
     { id: 'settings', label: t.settings, icon: '⚙️' },
   ];
@@ -26,7 +28,7 @@ function Sidebar({ activeTab, setActiveTab, isDark, toggleDark, t, appMode }) {
             <img src={logo} alt="Spectra Logo" className="w-11 h-11 object-contain" />
             <h1 className="text-xl font-bold tracking-tight text-white">Spectra Tools</h1>
         </div>
-        <div className="text-[10px] text-slate-400 mt-1 ml-14 font-mono uppercase tracking-widest opacity-70">{t.version} 0.1.1</div>
+        <div className="text-[10px] text-slate-400 mt-1 ml-14 font-mono uppercase tracking-widest opacity-70">{t.version} 0.1.2</div>
       </div>
       
       <nav className="flex-1 py-6 px-3 space-y-2">
@@ -64,6 +66,7 @@ function App() {
   const [isDark, setIsDark] = useState(false);
   const [lang, setLang] = useState('de');
   const [appMode, setAppMode] = useState('local');
+  const [comfyPath, setComfyPath] = useState(null);
   
   // Data Passing States
   const [loadedData, setLoadedData] = useState(null); // Gallery -> Generator (Prompt Data)
@@ -84,6 +87,9 @@ function App() {
         // App Info laden (Mode)
         const info = await DB.getAppInfo();
         setAppMode(info.mode);
+
+        const cPath = await DB.getConfig('comfyPath');
+        setComfyPath(cPath);
 
         // Sprache laden (DB bevorzugt, dann LocalStorage, dann Fallback)
         const dbLang = await DB.getConfig('lang');
@@ -139,6 +145,7 @@ function App() {
         toggleDark={toggleDark} 
         t={t}
         appMode={appMode}
+        hasComfy={!!comfyPath}
       />
 
       {/* Main Content */}
@@ -184,8 +191,9 @@ function App() {
             )}
 
             {activeTab === 'calculator' && <Calculator t={t} />}
+            {activeTab === 'comfyui' && <ComfyManager comfyPath={comfyPath} t={t} />}
             {activeTab === 'library' && <Library onLoadItem={handleLoadPrompt} t={t} />}
-            {activeTab === 'settings' && <Settings lang={lang} setLang={changeLang} t={t} appMode={appMode} />}
+            {activeTab === 'settings' && <Settings lang={lang} setLang={changeLang} t={t} appMode={appMode} onConfigChange={(key, val) => { if(key === 'comfyPath') setComfyPath(val); }} />}
 
           </section>
 

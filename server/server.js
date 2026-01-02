@@ -201,6 +201,126 @@ app.patch('/api/gallery/:id/favorite', (req, res) => {
     });
 });
 
+// --- COMFYUI MANAGEMENT ---
+let comfyProcess = null;
+
+// Hilfsfunktion: Prüft ob ein Port offen ist
+function isPortOpen(port, host = '127.0.0.1') {
+    return new Promise((resolve) => {
+        const net = require('net');
+        const socket = new net.Socket();
+        
+        socket.setTimeout(500);
+        socket.on('connect', () => {
+            socket.destroy();
+            resolve(true);
+        });
+        
+        socket.on('timeout', () => {
+            socket.destroy();
+            resolve(false);
+        });
+        
+        socket.on('error', () => {
+            socket.destroy();
+            resolve(false);
+        });
+        
+        socket.connect(port, host);
+    });
+}
+
+app.post('/api/comfy/start', async (req, res) => {
+    if (APP_MODE === 'cloud') return res.status(403).json({ error: "Disabled in cloud mode" });
+    
+    const { path: comfyPath, args } = req.body;
+    
+    db.get("SELECT value FROM config WHERE key = ?", ['comfyAdmin'], (err, configAdmin) => {
+    db.get("SELECT value FROM config WHERE key = ?", ['comfyMethod'], (err, configMethod) => {
+        const asAdmin = configAdmin && configAdmin.value === 'true';
+        const method = configMethod ? configMethod.value : 'default';
+
+        if (!comfyPath || !fs.existsSync(comfyPath)) {
+            return res.status(400).json({ error: "Ungültiger ComfyUI Pfad" });
+        }
+
+        let command = "";
+        let finalArgs = [];
+
+        if (method === 'nvidia') {
+            command = path.join(comfyPath, 'run_nvidia_gpu.bat');
+        } else if (method === 'nvidia_fast') {
+            command = path.join(comfyPath, 'run_nvidia_gpu_fast_fp16_accumulation.bat');
+        } else {
+            const isPortable = fs.existsSync(path.join(comfyPath, 'python_embeded'));
+            command = isPortable ? path.join(comfyPath, 'python_embeded', 'python.exe') : 'python';
+            
+            let scriptPath = path.join(comfyPath, 'main.py');
+            if (!fs.existsSync(scriptPath)) {
+                const subPath = path.join(comfyPath, 'ComfyUI', 'main.py');
+                if (fs.existsSync(subPath)) scriptPath = subPath;
+            }
+            finalArgs.push(scriptPath);
+        }
+
+        if (args) finalArgs.push(...args.split(' '));
+
+        try {
+            const { exec } = require('child_process');
+            
+            // Fix: PowerShell ArgumentList korrekt formatieren
+            // Wir nutzen ein Array von Strings, die in Anführungszeichen stehen
+            const formattedArgs = finalArgs.map(a => `\\"${a}\\"`).join(',');
+            const adminFlag = asAdmin ? "-Verb RunAs" : "";
+            
+            const startCmd = `powershell -Command "Start-Process -FilePath '${command}' ${finalArgs.length > 0 ? `-ArgumentList ${formattedArgs}` : ''} -WorkingDirectory '${comfyPath}' ${adminFlag}"`;
+
+            exec(startCmd, (error) => {
+                if (error) console.error(`ComfyUI Start Fehler: ${error}`);
+            });
+
+            comfyProcess = { pid: 'external', killed: false };
+            res.json({ success: true, message: "ComfyUI wird gestartet...", pid: 'external' });
+        } catch (e) {
+            res.status(500).json({ error: e.message });
+        }
+    });
+    });
+});
+
+app.get('/api/comfy/status', async (req, res) => {
+    // Wir prüfen standardmäßig Port 8188
+    const isOpen = await isPortOpen(8188);
+    
+    // Wenn der Port zu ist, löschen wir auch unsere interne Referenz
+    if (!isOpen) comfyProcess = null;
+    
+    res.json({ running: isOpen });
+});
+
+app.post('/api/comfy/models', (req, res) => {
+    const { path: comfyPath } = req.body;
+    if (!comfyPath) return res.json({ models: [] });
+
+    // Pfad zu den Checkpoints suchen
+    const modelPaths = [
+        path.join(comfyPath, 'models', 'checkpoints'),
+        path.join(comfyPath, 'ComfyUI', 'models', 'checkpoints')
+    ];
+
+    let foundPath = modelPaths.find(p => fs.existsSync(p));
+    if (!foundPath) return res.json({ models: [], error: "Modell-Ordner nicht gefunden" });
+
+    try {
+        const files = fs.readdirSync(foundPath)
+            .filter(f => f.endsWith('.safetensors') || f.endsWith('.ckpt'))
+            .map(f => ({ name: f, size: (fs.statSync(path.join(foundPath, f)).size / (1024 * 1024 * 1024)).toFixed(2) + ' GB' }));
+        res.json({ models: files, path: foundPath });
+    } catch (e) {
+        res.json({ models: [], error: e.message });
+    }
+});
+
 app.get(/.*/, (req, res) => res.sendFile(path.join(distPath, 'index.html')));
 
 app.listen(PORT, () => {
