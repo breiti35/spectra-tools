@@ -29,4 +29,5 @@ Thumbs.db
 Agent.md
 anleitung.md
 BACKLOG.md
-server/wildcards/
+server/wildcards/*
+!server/wildcards/README.md
