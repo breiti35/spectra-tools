@@ -38,6 +38,7 @@ export default function Generator({ initialData, onDataLoaded, t }) {
   const [isProMode, setIsProMode] = useState(false);
   const [sectionsOpen, setSectionsOpen] = useState({ basic: true, camera: false, env: false, char: false });
   const [history, setHistory] = useState(JSON.parse(localStorage.getItem('prompt_history') || '[]'));
+  const [wildcards, setWildcards] = useState({}); // Neu: Speicher für Wildcards
   
   const [formData, setFormData] = useState({
     promptIdea: "",
@@ -88,8 +89,60 @@ export default function Generator({ initialData, onDataLoaded, t }) {
     }
   }, [initialData, onDataLoaded]);
 
+  // Wildcards laden
+  React.useEffect(() => {
+      DB.getWildcards().then(data => setWildcards(data));
+  }, []);
+
   const handleChange = (field, value) => setFormData(prev => ({ ...prev, [field]: value }));
   const toggleSection = (sec) => setSectionsOpen(prev => ({ ...prev, [sec]: !prev[sec] }));
+
+  // Helper: Wildcards auflösen (mit Tracking)
+  const resolveWildcards = (text) => {
+      let resolved = text;
+      const replacements = [];
+      
+      // Wir nutzen eine Schleife, um Positionen korrekt zu tracken
+      // Achtung: Wenn sich die Länge ändert, verschieben sich Indizes.
+      // Einfacherer Ansatz: Wir speichern den "Original-Key" im Output-Objekt nicht per Index,
+      // sondern wir markieren den Text direkt.
+      // BESSER: Wir bauen den String neu und merken uns die "Parts".
+      
+      const parts = [];
+      let lastIndex = 0;
+      const regex = /__(\w+)__/g;
+      let match;
+
+      while ((match = regex.exec(text)) !== null) {
+          // Text vor dem Match
+          if (match.index > lastIndex) {
+              parts.push({ type: 'text', value: text.substring(lastIndex, match.index) });
+          }
+          
+          const key = match[1];
+          const list = wildcards[key];
+          let replacement = match[0]; // Fallback: __key__
+          let isWildcard = false;
+
+          if (list && list.length > 0) {
+              replacement = list[Math.floor(Math.random() * list.length)];
+              isWildcard = true;
+          }
+
+          parts.push({ type: 'wildcard', value: replacement, original: `__${key}__` });
+          lastIndex = regex.lastIndex;
+      }
+      
+      // Restlicher Text
+      if (lastIndex < text.length) {
+          parts.push({ type: 'text', value: text.substring(lastIndex) });
+      }
+
+      // Zusammengebauter String für den Generator
+      const finalString = parts.map(p => p.value).join('');
+      
+      return { finalString, parts };
+  };
 
   const addToHistory = (item) => {
     const newHistory = [item, ...history.filter(h => h.text !== item.text)].slice(0, 5);
@@ -98,9 +151,33 @@ export default function Generator({ initialData, onDataLoaded, t }) {
   };
 
   const generate = () => {
+    // 1. Wildcards auflösen
+    const { finalString, parts } = resolveWildcards(formData.promptIdea);
+    
+    // 2. Prompt bauen
     const finalSeed = resolveSeed(formData.seed, formData.seedLock);
-    const result = buildPrompt({ ...formData, seed: finalSeed });
-    const newOutput = { text: result.prompt, tags: result.tags || [], seed: result.seed };
+    
+    // Wir übergeben den REINEN Text an den Builder, damit Styles etc. angewendet werden
+    const result = buildPrompt({ ...formData, promptIdea: finalString, seed: finalSeed });
+    
+    // Aber für die Anzeige merken wir uns, dass der "Idea-Part" aus Wildcards besteht
+    // Da buildPrompt den Text noch mit Styles umschließt, ist das Mapping schwierig.
+    // TRICK: Wir speichern die "Parts" nur für den Idea-Teil und rendern diesen speziell,
+    // oder wir speichern einfach den gesamten finalen Text und die Info, welche Wörter Wildcards waren.
+    
+    // VEREINFACHUNG FÜR UX:
+    // Wir speichern das "parts" Array im Output.
+    // Wenn der User Styles nutzt, wird das Mapping komplex.
+    // Daher: Wir zeigen im Output VORERST nur den finalen Text an.
+    // ABER: Wir markieren die Wildcards, indem wir sie im State speichern.
+    
+    const newOutput = { 
+        text: result.prompt, 
+        tags: result.tags || [], 
+        seed: result.seed,
+        wildcardParts: parts // Speichern für Highlight
+    };
+    
     setOutput(newOutput);
     handleChange('seed', result.seed);
     addToHistory(newOutput);
@@ -153,6 +230,48 @@ export default function Generator({ initialData, onDataLoaded, t }) {
     alert(t.copySuccess);
   };
 
+  const renderOutputText = () => {
+      const txt = output.text;
+      if (!output.wildcardParts || !txt) return txt;
+
+      // Wir bauen ein React-Element Array
+      // Strategie: Wir nehmen den vollen Text und splitten ihn anhand der Wildcard-Werte
+      // Das ist simpel und funktioniert meistens, solange Werte unique sind.
+      
+      let elements = [txt];
+
+      output.wildcardParts.forEach(part => {
+          if (part.type === 'wildcard') {
+              const newElements = [];
+              elements.forEach(el => {
+                  if (typeof el === 'string') {
+                      // Splitte String am Wildcard-Wert
+                      const parts = el.split(part.value);
+                      parts.forEach((p, i) => {
+                          if (p) newElements.push(p);
+                          if (i < parts.length - 1) {
+                              // Füge Highlight ein
+                              newElements.push(
+                                  <span key={`${part.original}-${i}`} className="text-purple-600 dark:text-purple-400 font-bold bg-purple-50 dark:bg-purple-900/30 px-1 rounded cursor-help relative group/wc border-b border-purple-300 dark:border-purple-600 border-dashed" title={`Generiert aus ${part.original}`}>
+                                      {part.value}
+                                      <span className="absolute bottom-full left-1/2 -translate-x-1/2 mb-1 px-2 py-1 bg-black text-white text-[10px] rounded opacity-0 group-hover/wc:opacity-100 transition-opacity pointer-events-none whitespace-nowrap z-10">
+                                          {part.original}
+                                      </span>
+                                  </span>
+                              );
+                          }
+                      });
+                  } else {
+                      newElements.push(el);
+                  }
+              });
+              elements = newElements;
+          }
+      });
+
+      return elements;
+  };
+
   return (
     <div className="space-y-6 animate-fade-in">
       
@@ -175,6 +294,38 @@ export default function Generator({ initialData, onDataLoaded, t }) {
           value={formData.promptIdea}
           onChange={e => handleChange('promptIdea', e.target.value)}
         />
+        
+        {/* Wildcard Hints */}
+        <div className="mt-3">
+            <div className="flex items-center justify-between mb-1 px-1">
+                <span className="text-[10px] font-bold text-gray-400 dark:text-zinc-500 uppercase tracking-widest flex items-center gap-1">
+                    ✨ Wildcards 
+                    <span className="group relative cursor-help">
+                        <span className="text-blue-500/50">ⓘ</span>
+                        <span className="absolute bottom-full left-0 mb-2 w-64 p-2 bg-slate-900 text-white text-[10px] rounded-lg opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none shadow-xl z-20 font-normal normal-case leading-relaxed">
+                            {t.wildcardHint}
+                        </span>
+                    </span>
+                </span>
+            </div>
+            {Object.keys(wildcards).length > 0 ? (
+                <div className="flex gap-2 overflow-x-auto pb-1 custom-scrollbar">
+                    {Object.keys(wildcards).map(wc => (
+                        <button 
+                            key={wc}
+                            onClick={() => handleChange('promptIdea', formData.promptIdea + ` __${wc}__`)}
+                            className="text-[10px] font-mono bg-purple-50 dark:bg-purple-900/20 text-purple-600 dark:text-purple-300 px-2 py-1 rounded border border-purple-100 dark:border-purple-800 hover:bg-purple-100 dark:hover:bg-purple-900/40 transition-colors whitespace-nowrap"
+                            title={`Fügt __${wc}__ ein`}
+                        >
+                            __{wc}__
+                        </button>
+                    ))}
+                </div>
+            ) : (
+                <div className="text-[10px] text-gray-400 italic px-1">{t.wildcardHint}</div>
+            )}
+        </div>
+
         <div className="flex justify-between items-center mt-4">
              <div className="flex items-center gap-2">
                  <label className="flex items-center gap-2 cursor-pointer bg-gray-100 dark:bg-zinc-700 px-3 py-1.5 rounded-lg hover:bg-gray-200 dark:hover:bg-zinc-600 transition">
@@ -194,7 +345,7 @@ export default function Generator({ initialData, onDataLoaded, t }) {
           <div className="p-8 pb-4">
               <div className="flex justify-between items-start mb-2">
                   <div className="min-h-[80px] text-lg leading-relaxed text-slate-700 dark:text-gray-200 font-medium whitespace-pre-wrap flex-1">
-                      {output.text}
+                      {renderOutputText()}
                   </div>
                   {output.text && !output.text.includes(t.outputPlaceholder.substring(0, 10)) && (
                       <div className="bg-gray-100 dark:bg-zinc-900 px-2 py-1 rounded text-[10px] font-bold text-gray-400 dark:text-gray-500 ml-4 uppercase tracking-widest">

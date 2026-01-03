@@ -48,6 +48,7 @@ export const translations = {
     load: "Laden",
     randomIdea: "Zufällige Idee",
     tokens: "Tokens",
+    wildcardHint: "Eigene Listen? Lege .txt-Dateien in server/wildcards/ ab.",
 
     // Settings Sections
     basisConfig: "Basis-Konfiguration",
@@ -218,6 +219,7 @@ export const translations = {
     load: "Load",
     randomIdea: "Random Idea",
     tokens: "Tokens",
+    wildcardHint: "Custom lists? Place .txt files in server/wildcards/ folder.",
 
     // Settings Sections
     basisConfig: "Base Configuration",

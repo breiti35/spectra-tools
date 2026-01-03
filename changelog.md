@@ -1,6 +1,19 @@
-# Changelog - Version 0.1.3
+# Changelog - Version 0.1.4 Alpha
 
 Alle aktuellen Änderungen und Optimierungen in der Übersicht.
+
+## [0.1.4 Alpha] - 2026-01-03
+
+### ✨ Neue Features
+- **Wildcard-System (Magic Prompts):**
+    - Unterstützung für benutzerdefinierte Wortlisten via `__wildcard__` Syntax.
+    - Automatisches Auflösen von Platzhaltern beim Generieren.
+    - **Visual Highlighting:** Wildcards werden im Output farblich markiert (Lila) und zeigen beim Hover den ursprünglichen Platzhalter an.
+    - **Quick-Access Buttons:** Dynamische Anzeige verfügbarer Wildcards unter dem Eingabefeld.
+    - **Interaktiver Info-Hint:** Erklärt den Speicherort (`server/wildcards/`) für eigene Listen.
+
+### 🛠️ Optimierungen & Fixes
+- **Generator Logik:** Komplette Überarbeitung des Prompt-Resolvers, um die Herkunft jedes Wortes (fest getippt vs. gewürfelt) zu tracken.
 
 ## [0.1.3] - 2026-01-02
 

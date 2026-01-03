@@ -17,6 +17,13 @@ export const DB = {
         } catch(e) { return { mode: 'local' }; }
     },
 
+    async getWildcards() {
+        try {
+            const res = await fetch('/api/wildcards');
+            return await res.json();
+        } catch(e) { return {}; }
+    },
+
     // --- PROMPTS ---
     async addItem(item) {
         const payload = { ...item, created_at: item.date, negative_prompt: item.negative || "" };

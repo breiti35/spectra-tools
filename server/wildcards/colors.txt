@@ -1,0 +1,10 @@
+Red
+Blue
+Green
+Yellow
+Purple
+Neon Pink
+Dark Cyan
+Golden
+Silver
+Matte Black

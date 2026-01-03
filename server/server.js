@@ -46,6 +46,31 @@ app.get('/api/info', (req, res) => {
     res.json({ mode: APP_MODE });
 });
 
+// 0. WILDCARDS (Neu!)
+app.get('/api/wildcards', (req, res) => {
+    const wcPath = path.join(__dirname, 'wildcards');
+    if (!fs.existsSync(wcPath)) {
+        fs.mkdirSync(wcPath); // Ordner erstellen falls nicht da
+        return res.json({});
+    }
+
+    const wildcards = {};
+    try {
+        const files = fs.readdirSync(wcPath);
+        files.forEach(file => {
+            if (file.endsWith('.txt')) {
+                const key = file.replace('.txt', ''); // "colors.txt" -> "colors"
+                const content = fs.readFileSync(path.join(wcPath, file), 'utf-8');
+                // Zeilen trennen und leere entfernen
+                wildcards[key] = content.split(/\r?\n/).filter(line => line.trim() !== '');
+            }
+        });
+        res.json(wildcards);
+    } catch (e) {
+        res.status(500).json({ error: e.message });
+    }
+});
+
 // 0. CONFIG (Settings)
 app.get('/api/config/:key', (req, res) => {
     db.get("SELECT value FROM config WHERE key = ?", [req.params.key], (err, row) => {
