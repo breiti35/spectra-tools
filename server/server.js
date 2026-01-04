@@ -11,7 +11,11 @@ const PORT = process.env.PORT || 3000;
 const APP_MODE = process.env.APP_MODE || 'local'; // 'local' or 'cloud'
 
 // Middleware
-app.use(cors());
+const corsOrigins = (process.env.CORS_ORIGINS || 'http://localhost:5173')
+    .split(',')
+    .map((origin) => origin.trim())
+    .filter(Boolean);
+app.use(cors({ origin: corsOrigins }));
 app.use(express.json());
 
 const distPath = path.join(__dirname, '..', 'client', 'dist');
