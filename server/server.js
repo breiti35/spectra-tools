@@ -227,6 +227,20 @@ app.patch('/api/gallery/:id/favorite', (req, res) => {
 });
 
 // --- COMFYUI MANAGEMENT ---
+function parseArgs(input) {
+    if (!input) return [];
+    if (Array.isArray(input)) return input;
+    if (typeof input !== 'string') return [];
+    const result = [];
+    const re = /"([^"\\]*(?:\\.[^"\\]*)*)"|'([^'\\]*(?:\\.[^'\\]*)*)'|(\S+)/g;
+    let match;
+    while ((match = re.exec(input)) !== null) {
+        const value = match[1] ?? match[2] ?? match[3];
+        result.push(value.replace(/\\(["'])/g, '$1'));
+    }
+    return result;
+}
+
 let comfyProcess = null;
 let comfyLogs = [];
 
@@ -300,7 +314,7 @@ app.post('/api/comfy/start', async (req, res) => {
             finalArgs.push(scriptPath);
         }
 
-        if (args) finalArgs.push(...args.split(' '));
+        if (args) finalArgs.push(...parseArgs(args));
 
         try {
             const { exec, spawn } = require('child_process');
@@ -319,9 +333,16 @@ app.post('/api/comfy/start', async (req, res) => {
                 comfyLogs.push("[SYSTEM] Gestartet im Admin-Modus. Logs im externen Fenster.");
             } else {
                 // NORMALER MODUS: Wir fangen den Output ab!
-                comfyProcess = spawn(command, finalArgs, {
+                let spawnCommand = command;
+                let spawnArgs = finalArgs;
+                if (path.extname(command).toLowerCase() === '.bat') {
+                    spawnCommand = process.env.COMSPEC || 'cmd.exe';
+                    spawnArgs = ['/c', command, ...finalArgs];
+                }
+
+                comfyProcess = spawn(spawnCommand, spawnArgs, {
                     cwd: comfyPath,
-                    shell: true
+                    shell: false
                 });
 
                 comfyProcess.stdout.on('data', (data) => addLog(data));
