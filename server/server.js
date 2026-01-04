@@ -307,41 +307,34 @@ app.post('/api/comfy/start', async (req, res) => {
             comfyLogs = [`[SYSTEM] Starte ComfyUI (Method: ${method})...`];
 
             if (asAdmin) {
-                    // ADMIN MODUS: Externes Fenster (Logs nicht direkt abfangbar)
-                    const psEscape = (value) => String(value).replace(/'/g, "''");
+                // ADMIN MODUS: Externes Fenster (Logs nicht direkt abfangbar)
+                const psEscape = (value) => value.replace(/'/g, "''");
+                const psFilePath = psEscape(command);
+                const psWorkingDir = psEscape(comfyPath);
+                const psArgList = finalArgs.map((arg) => `'${psEscape(arg)}'`).join(', ');
+                const argListPart = finalArgs.length > 0 ? `-ArgumentList ${psArgList} ` : '';
+                const startCmd = `powershell -Command "Start-Process -FilePath '${psFilePath}' ${argListPart}-WorkingDirectory '${psWorkingDir}' -Verb RunAs"`;
+                
+                exec(startCmd, (error) => {
+                    if (error) console.error(`ComfyUI Start Fehler: ${error}`);
+                });
+                comfyProcess = { pid: 'external' };
+                comfyLogs.push("[SYSTEM] Gestartet im Admin-Modus. Logs im externen Fenster.");
+            } else {
+                // NORMALER MODUS: Wir fangen den Output ab!
+                comfyProcess = spawn(command, finalArgs, {
+                    cwd: comfyPath,
+                    shell: true
+                });
 
-                    const psFilePath = psEscape(command);
-                    const psWorkingDir = psEscape(comfyPath);
-
-                    const psArgList = finalArgs.map((arg) => `'${psEscape(arg)}'`).join(', ');
-                    const argListPart = finalArgs.length > 0 ? `-ArgumentList @(${psArgList}) ` : '';
-
-                    const startCmd =
-                        `powershell -NoProfile -ExecutionPolicy Bypass -Command ` +
-                        `"Start-Process -FilePath '${psFilePath}' ${argListPart}-WorkingDirectory '${psWorkingDir}' -Verb RunAs"`;
-
-                    exec(startCmd, (error) => {
-                        if (error) console.error(`ComfyUI Start Fehler: ${error}`);
-                    });
-
-                    comfyProcess = { pid: 'external' };
-                    comfyLogs.push("[SYSTEM] Gestartet im Admin-Modus. Logs im externen Fenster.");
-                } else {
-                    // NORMALER MODUS: Wir fangen den Output ab!
-                    comfyProcess = spawn(command, finalArgs, {
-                        cwd: comfyPath,
-                        shell: true
-                    });
-
-                    comfyProcess.stdout.on('data', (data) => addLog(data));
-                    comfyProcess.stderr.on('data', (data) => addLog(data));
-
-                    comfyProcess.on('close', (code) => {
-                        comfyLogs.push(`[SYSTEM] Prozess mit Code ${code} beendet.`);
-                        comfyProcess = null;
-                    });
-                }
-
+                comfyProcess.stdout.on('data', (data) => addLog(data));
+                comfyProcess.stderr.on('data', (data) => addLog(data));
+                
+                comfyProcess.on('close', (code) => {
+                    comfyLogs.push(`[SYSTEM] Prozess mit Code ${code} beendet.`);
+                    comfyProcess = null;
+                });
+            }
 
             res.json({ success: true, message: "ComfyUI wird gestartet...", pid: 'active' });
         } catch (e) {
