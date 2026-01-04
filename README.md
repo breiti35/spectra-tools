@@ -89,9 +89,6 @@ Voraussetzung: Node.js (LTS empfohlen).
 3. **Start:**
    Führe die `dev.bat` aus oder starte Server und Client manuell via `npm run dev`.
 
-## Dokumentation für Entwickler
-Weitere Details zur Architektur und zum Code findest du in der [Agent.md](./Agent.md). Geplante Features sind im [BACKLOG.md](./BACKLOG.md) gelistet.
-
 ## Lizenz
 
 ## 👨‍💻 Author & Philosophy
