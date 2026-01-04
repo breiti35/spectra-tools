@@ -51,24 +51,27 @@ app.get('/api/info', (req, res) => {
 });
 
 // 0. WILDCARDS (Neu!)
-app.get('/api/wildcards', (req, res) => {
+app.get('/api/wildcards', async (req, res) => {
+    if (APP_MODE === 'cloud') return res.status(403).json({ error: "Disabled in cloud mode" });
     const wcPath = path.join(__dirname, 'wildcards');
-    if (!fs.existsSync(wcPath)) {
-        fs.mkdirSync(wcPath); // Ordner erstellen falls nicht da
-        return res.json({});
-    }
-
-    const wildcards = {};
+    
     try {
-        const files = fs.readdirSync(wcPath);
-        files.forEach(file => {
+        if (!fs.existsSync(wcPath)) {
+            await fs.promises.mkdir(wcPath, { recursive: true });
+            return res.json({});
+        }
+
+        const wildcards = {};
+        const files = await fs.promises.readdir(wcPath);
+        
+        await Promise.all(files.map(async (file) => {
             if (file.endsWith('.txt')) {
-                const key = file.replace('.txt', ''); // "colors.txt" -> "colors"
-                const content = fs.readFileSync(path.join(wcPath, file), 'utf-8');
-                // Zeilen trennen und leere entfernen
+                const key = file.replace('.txt', '');
+                const content = await fs.promises.readFile(path.join(wcPath, file), 'utf-8');
                 wildcards[key] = content.split(/\r?\n/).filter(line => line.trim() !== '');
             }
-        });
+        }));
+        
         res.json(wildcards);
     } catch (e) {
         res.status(500).json({ error: e.message });
@@ -92,7 +95,7 @@ app.post('/api/config', (req, res) => {
 });
 
 // 1. FOLDER BROWSER (Der Dateimanager)
-app.post('/api/browse', (req, res) => {
+app.post('/api/browse', async (req, res) => {
     if (APP_MODE === 'cloud') return res.status(403).json({ error: "Filesystem browsing is disabled in cloud mode." });
     let currentPath = req.body.path;
 
@@ -107,7 +110,7 @@ app.post('/api/browse', (req, res) => {
     }
 
     try {
-        const items = fs.readdirSync(currentPath, { withFileTypes: true });
+        const items = await fs.promises.readdir(currentPath, { withFileTypes: true });
         const folders = items
             .filter(item => item.isDirectory())
             .map(item => item.name)
@@ -146,7 +149,7 @@ app.delete('/api/folders/:id', (req, res) => {
 });
 
 // 3. IMAGES SCANNER
-app.post('/api/local-images', (req, res) => {
+app.post('/api/local-images', async (req, res) => {
     if (APP_MODE === 'cloud') return res.json({ images: [] });
     // Pfad kommt jetzt direkt vom Frontend (aus dem Dropdown)
     const dir = req.body.path; 
@@ -154,23 +157,23 @@ app.post('/api/local-images', (req, res) => {
     if (!dir || !fs.existsSync(dir)) return res.json({ images: [] });
     
     try {
-        const files = fs.readdirSync(dir);
-        const images = files
-            .filter(file => /\.(png|jpg|jpeg|webp)$/i.test(file))
-            .map(file => {
-                const fullPath = path.join(dir, file);
-                try {
-                    const stats = fs.statSync(fullPath);
-                    return {
-                        name: file,
-                        fullPath: fullPath,
-                        mtime: stats.mtimeMs
-                    };
-                } catch(e) { return null; }
-            })
-            .filter(Boolean)
-            .sort((a, b) => b.mtime - a.mtime)
-            .slice(0, 100);
+        const files = await fs.promises.readdir(dir);
+        const imageFiles = files.filter(file => /\.(png|jpg|jpeg|webp)$/i.test(file));
+        
+        const images = (await Promise.all(imageFiles.map(async (file) => {
+            const fullPath = path.join(dir, file);
+            try {
+                const stats = await fs.promises.stat(fullPath);
+                return {
+                    name: file,
+                    fullPath: fullPath,
+                    mtime: stats.mtimeMs
+                };
+            } catch(e) { return null; }
+        })))
+        .filter(Boolean)
+        .sort((a, b) => b.mtime - a.mtime)
+        .slice(0, 100);
 
         res.json({ images });
     } catch(e) {
@@ -182,7 +185,13 @@ app.post('/api/local-images', (req, res) => {
 app.get('/api/image-view', (req, res) => {
     if (APP_MODE === 'cloud') return res.status(403).send("Forbidden");
     const imgPath = req.query.path;
-    if(!imgPath || !fs.existsSync(imgPath)) return res.status(404).send("Not found");
+    
+    // Security Check: Nur Bilddateien erlauben
+    if (!imgPath || !/\.(png|jpg|jpeg|webp|gif|svg)$/i.test(imgPath)) {
+        return res.status(400).send("Invalid file type");
+    }
+
+    if(!fs.existsSync(imgPath)) return res.status(404).send("Not found");
     res.sendFile(imgPath);
 });
 
@@ -312,9 +321,20 @@ app.post('/api/comfy/start', async (req, res) => {
 
             if (asAdmin) {
                 // ADMIN MODUS: Externes Fenster (Logs nicht direkt abfangbar)
-                const psArgs = finalArgs.map(a => `\\"${a}\\"`).join(',');
-                const adminFlag = "-Verb RunAs";
-                const startCmd = `powershell -Command "Start-Process -FilePath '${command}' ${finalArgs.length > 0 ? `-ArgumentList ${formattedArgs}` : ''} -WorkingDirectory '${comfyPath}' ${adminFlag}"`;
+                
+                // PowerShell Escaping Helper (einfaches Escaping für Single-Quotes)
+                const psEscape = (s) => s.replace(/'/g, "''");
+                
+                // ArgumentList als String 'arg1', 'arg2' bauen
+                const formattedArgs = finalArgs.map(a => `'${psEscape(a)}'`).join(", ");
+                
+                const psCommand = psEscape(command);
+                const psCwd = psEscape(comfyPath);
+                
+                // Start-Process Syntax: -ArgumentList 'a', 'b' ...
+                const argListPart = finalArgs.length > 0 ? `-ArgumentList ${formattedArgs}` : '';
+                
+                const startCmd = `powershell -Command "Start-Process -FilePath '${psCommand}' ${argListPart} -WorkingDirectory '${psCwd}' -Verb RunAs"`;
                 
                 exec(startCmd, (error) => {
                     if (error) console.error(`ComfyUI Start Fehler: ${error}`);
@@ -323,9 +343,14 @@ app.post('/api/comfy/start', async (req, res) => {
                 comfyLogs.push("[SYSTEM] Gestartet im Admin-Modus. Logs im externen Fenster.");
             } else {
                 // NORMALER MODUS: Wir fangen den Output ab!
-                comfyProcess = spawn(command, finalArgs, {
+                const isWin = process.platform === 'win32';
+                // Unter Windows rufen wir cmd /c auf, um .bat Dateien sicher zu starten ohne shell:true im spawn
+                const spawnCmd = isWin ? 'cmd.exe' : command;
+                const spawnArgs = isWin ? ['/c', command, ...finalArgs] : finalArgs;
+
+                comfyProcess = spawn(spawnCmd, spawnArgs, {
                     cwd: comfyPath,
-                    shell: true
+                    shell: false
                 });
 
                 comfyProcess.stdout.on('data', (data) => addLog(data));
@@ -381,6 +406,7 @@ app.post('/api/comfy/stop', async (req, res) => {
 });
 
 app.post('/api/comfy/models', (req, res) => {
+    if (APP_MODE === 'cloud') return res.status(403).json({ error: "Disabled in cloud mode" });
     const { path: comfyPath } = req.body;
     if (!comfyPath) return res.json({ models: [] });
 
