@@ -52,29 +52,26 @@ app.get('/api/info', (req, res) => {
 
 // 0. WILDCARDS (Neu!)
 app.get('/api/wildcards', async (req, res) => {
+    if (APP_MODE === 'cloud') return res.status(403).json({ error: "Disabled in cloud mode" });
     const wcPath = path.join(__dirname, 'wildcards');
+    
     try {
-        await fs.promises.access(wcPath);
-    } catch (e) {
-        try {
-            await fs.promises.mkdir(wcPath, { recursive: true }); // Ordner erstellen falls nicht da
-        } catch (mkdirError) {
-            return res.status(500).json({ error: mkdirError.message });
+        if (!fs.existsSync(wcPath)) {
+            await fs.promises.mkdir(wcPath, { recursive: true });
+            return res.json({});
         }
-        return res.json({});
-    }
 
-    const wildcards = {};
-    try {
+        const wildcards = {};
         const files = await fs.promises.readdir(wcPath);
+        
         await Promise.all(files.map(async (file) => {
             if (file.endsWith('.txt')) {
-                const key = file.replace('.txt', ''); // "colors.txt" -> "colors"
+                const key = file.replace('.txt', '');
                 const content = await fs.promises.readFile(path.join(wcPath, file), 'utf-8');
-                // Zeilen trennen und leere entfernen
                 wildcards[key] = content.split(/\r?\n/).filter(line => line.trim() !== '');
             }
         }));
+        
         res.json(wildcards);
     } catch (e) {
         res.status(500).json({ error: e.message });
@@ -119,7 +116,7 @@ app.post('/api/browse', async (req, res) => {
             .map(item => item.name)
             .filter(name => !name.startsWith('$') && !name.startsWith('.')); // Versteckte ausblenden
 
-        res.json({ 
+        res.json({
             folders: folders,
             currentPath: path.resolve(currentPath),
             parentPath: path.resolve(currentPath, '..')
@@ -158,17 +155,18 @@ app.post('/api/local-images', async (req, res) => {
     const dir = req.body.path; 
     
     if (!dir) return res.json({ images: [] });
-    let dirStats;
+    // Check if directory exists and is a directory
     try {
-        dirStats = await fs.promises.stat(dir);
+        const stats = await fs.promises.stat(dir);
+        if (!stats.isDirectory()) return res.json({ images: [] });
     } catch (e) {
         return res.json({ images: [] });
     }
-    if (!dirStats.isDirectory()) return res.json({ images: [] });
     
     try {
         const files = await fs.promises.readdir(dir);
         const imageFiles = files.filter(file => /\.(png|jpg|jpeg|webp)$/i.test(file));
+        
         const images = (await Promise.all(imageFiles.map(async (file) => {
             const fullPath = path.join(dir, file);
             try {
@@ -180,9 +178,9 @@ app.post('/api/local-images', async (req, res) => {
                 };
             } catch(e) { return null; }
         })))
-            .filter(Boolean)
-            .sort((a, b) => b.mtime - a.mtime)
-            .slice(0, 100);
+        .filter(Boolean)
+        .sort((a, b) => b.mtime - a.mtime)
+        .slice(0, 100);
 
         res.json({ images });
     } catch(e) {
@@ -194,9 +192,10 @@ app.post('/api/local-images', async (req, res) => {
 app.get('/api/image-view', (req, res) => {
     if (APP_MODE === 'cloud') return res.status(403).send("Forbidden");
     const imgPath = req.query.path;
+    
     if (!imgPath) return res.status(400).send("Invalid path");
 
-    const allowedExts = new Set(['.png', '.jpg', '.jpeg', '.webp']);
+    const allowedExts = new Set(['.png', '.jpg', '.jpeg', '.webp', '.gif', '.svg']);
     const ext = path.extname(imgPath).toLowerCase();
     if (!allowedExts.has(ext)) return res.status(403).send("Forbidden");
 
@@ -380,12 +379,20 @@ app.post('/api/comfy/start', async (req, res) => {
 
             if (asAdmin) {
                 // ADMIN MODUS: Externes Fenster (Logs nicht direkt abfangbar)
-                const psEscape = (value) => value.replace(/'/g, "''");
-                const psFilePath = psEscape(command);
-                const psWorkingDir = psEscape(comfyPath);
-                const psArgList = finalArgs.map((arg) => `'${psEscape(arg)}'`).join(', ');
-                const argListPart = finalArgs.length > 0 ? `-ArgumentList ${psArgList} ` : '';
-                const startCmd = `powershell -Command "Start-Process -FilePath '${psFilePath}' ${argListPart}-WorkingDirectory '${psWorkingDir}' -Verb RunAs"`;
+                
+                // PowerShell Escaping Helper (einfaches Escaping für Single-Quotes)
+                const psEscape = (s) => s.replace(/'/g, "''");
+                
+                // ArgumentList als String 'arg1', 'arg2' bauen
+                const formattedArgs = finalArgs.map(a => `'${psEscape(a)}'`).join(", ");
+                
+                const psCommand = psEscape(command);
+                const psCwd = psEscape(comfyPath);
+                
+                // Start-Process Syntax: -ArgumentList 'a', 'b' ...
+                const argListPart = finalArgs.length > 0 ? `-ArgumentList ${formattedArgs}` : '';
+                
+                const startCmd = `powershell -Command "Start-Process -FilePath '${psCommand}' ${argListPart} -WorkingDirectory '${psCwd}' -Verb RunAs"`;
                 
                 exec(startCmd, (error) => {
                     if (error) console.error(`ComfyUI Start Fehler: ${error}`);
@@ -459,6 +466,7 @@ app.post('/api/comfy/stop', async (req, res) => {
 });
 
 app.post('/api/comfy/models', (req, res) => {
+    if (APP_MODE === 'cloud') return res.status(403).json({ error: "Disabled in cloud mode" });
     const { path: comfyPath } = req.body;
     if (!comfyPath) return res.json({ models: [] });
 
