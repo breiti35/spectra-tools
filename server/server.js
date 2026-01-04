@@ -178,8 +178,50 @@ app.post('/api/local-images', (req, res) => {
 app.get('/api/image-view', (req, res) => {
     if (APP_MODE === 'cloud') return res.status(403).send("Forbidden");
     const imgPath = req.query.path;
-    if(!imgPath || !fs.existsSync(imgPath)) return res.status(404).send("Not found");
-    res.sendFile(imgPath);
+    if (!imgPath) return res.status(400).send("Invalid path");
+
+    const allowedExts = new Set(['.png', '.jpg', '.jpeg', '.webp']);
+    const ext = path.extname(imgPath).toLowerCase();
+    if (!allowedExts.has(ext)) return res.status(403).send("Forbidden");
+
+    let resolvedPath;
+    try {
+        resolvedPath = fs.realpathSync(imgPath);
+    } catch (e) {
+        return res.status(400).send("Invalid path");
+    }
+
+    let stats;
+    try {
+        stats = fs.statSync(resolvedPath);
+    } catch (e) {
+        return res.status(400).send("Invalid path");
+    }
+
+    if (!stats.isFile()) return res.status(400).send("Invalid path");
+
+    db.all("SELECT path FROM folders", [], (err, rows) => {
+        if (err) return res.status(500).send("Server error");
+
+        const roots = rows.map((row) => row.path).filter(Boolean);
+        if (roots.length === 0) return res.status(403).send("Forbidden");
+
+        const normalizePath = (value) => {
+            const normalized = path.resolve(value);
+            return process.platform === 'win32' ? normalized.toLowerCase() : normalized;
+        };
+
+        const normalizedFile = normalizePath(resolvedPath);
+        const isAllowed = roots.some((root) => {
+            const normalizedRoot = normalizePath(root);
+            const rootWithSep = normalizedRoot.endsWith(path.sep) ? normalizedRoot : normalizedRoot + path.sep;
+            return normalizedFile.startsWith(rootWithSep);
+        });
+
+        if (!isAllowed) return res.status(403).send("Forbidden");
+
+        res.sendFile(resolvedPath);
+    });
 });
 
 // --- GALLERY DBROUTES ---
