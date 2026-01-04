@@ -23,9 +23,9 @@ app.use(express.static(distPath));
 
 // DB Init
 db.serialize(() => {
-    db.run(`CREATE TABLE IF NOT EXISTS config (key TEXT PRIMARY KEY, value TEXT)`);
+    db.run(`CREATE TABLE IF NOT EXISTS config (key TEXT PRIMARY KEY, value TEXT)`)
     // Neue Tabelle für gespeicherte Ordner-Pfade
-    db.run(`CREATE TABLE IF NOT EXISTS folders (id INTEGER PRIMARY KEY AUTOINCREMENT, path TEXT UNIQUE, label TEXT)`);
+    db.run(`CREATE TABLE IF NOT EXISTS folders (id INTEGER PRIMARY KEY AUTOINCREMENT, path TEXT UNIQUE, label TEXT)`)
 });
 
 // --- HELPER: WINDOWS DRIVES ---
@@ -116,7 +116,7 @@ app.post('/api/browse', async (req, res) => {
             .map(item => item.name)
             .filter(name => !name.startsWith('$') && !name.startsWith('.')); // Versteckte ausblenden
 
-        res.json({ 
+        res.json({
             folders: folders,
             currentPath: path.resolve(currentPath),
             parentPath: path.resolve(currentPath, '..')
@@ -154,7 +154,14 @@ app.post('/api/local-images', async (req, res) => {
     // Pfad kommt jetzt direkt vom Frontend (aus dem Dropdown)
     const dir = req.body.path; 
     
-    if (!dir || !fs.existsSync(dir)) return res.json({ images: [] });
+    if (!dir) return res.json({ images: [] });
+    // Check if directory exists and is a directory
+    try {
+        const stats = await fs.promises.stat(dir);
+        if (!stats.isDirectory()) return res.json({ images: [] });
+    } catch (e) {
+        return res.json({ images: [] });
+    }
     
     try {
         const files = await fs.promises.readdir(dir);
@@ -186,13 +193,50 @@ app.get('/api/image-view', (req, res) => {
     if (APP_MODE === 'cloud') return res.status(403).send("Forbidden");
     const imgPath = req.query.path;
     
-    // Security Check: Nur Bilddateien erlauben
-    if (!imgPath || !/\.(png|jpg|jpeg|webp|gif|svg)$/i.test(imgPath)) {
-        return res.status(400).send("Invalid file type");
+    if (!imgPath) return res.status(400).send("Invalid path");
+
+    const allowedExts = new Set(['.png', '.jpg', '.jpeg', '.webp', '.gif', '.svg']);
+    const ext = path.extname(imgPath).toLowerCase();
+    if (!allowedExts.has(ext)) return res.status(403).send("Forbidden");
+
+    let resolvedPath;
+    try {
+        resolvedPath = fs.realpathSync(imgPath);
+    } catch (e) {
+        return res.status(400).send("Invalid path");
     }
 
-    if(!fs.existsSync(imgPath)) return res.status(404).send("Not found");
-    res.sendFile(imgPath);
+    let stats;
+    try {
+        stats = fs.statSync(resolvedPath);
+    } catch (e) {
+        return res.status(400).send("Invalid path");
+    }
+
+    if (!stats.isFile()) return res.status(400).send("Invalid path");
+
+    db.all("SELECT path FROM folders", [], (err, rows) => {
+        if (err) return res.status(500).send("Server error");
+
+        const roots = rows.map((row) => row.path).filter(Boolean);
+        if (roots.length === 0) return res.status(403).send("Forbidden");
+
+        const normalizePath = (value) => {
+            const normalized = path.resolve(value);
+            return process.platform === 'win32' ? normalized.toLowerCase() : normalized;
+        };
+
+        const normalizedFile = normalizePath(resolvedPath);
+        const isAllowed = roots.some((root) => {
+            const normalizedRoot = normalizePath(root);
+            const rootWithSep = normalizedRoot.endsWith(path.sep) ? normalizedRoot : normalizedRoot + path.sep;
+            return normalizedFile.startsWith(rootWithSep);
+        });
+
+        if (!isAllowed) return res.status(403).send("Forbidden");
+
+        res.sendFile(resolvedPath);
+    });
 });
 
 // --- GALLERY DBROUTES ---
@@ -240,6 +284,20 @@ app.patch('/api/gallery/:id/favorite', (req, res) => {
 });
 
 // --- COMFYUI MANAGEMENT ---
+function parseArgs(input) {
+    if (!input) return [];
+    if (Array.isArray(input)) return input;
+    if (typeof input !== 'string') return [];
+    const result = [];
+    const re = /"([^"\\]*(?:\\.[^"\\]*)*)"|"([^"]*(?:\\.[^"]*)*)"|'([^'\\]*(?:\\.[^'\\]*)*)'|(\S+)/g;
+    let match;
+    while ((match = re.exec(input)) !== null) {
+        const value = match[1] ?? match[2] ?? match[3] ?? match[4];
+        result.push(value.replace(/\\(["'])/g, '$1'));
+    }
+    return result;
+}
+
 let comfyProcess = null;
 let comfyLogs = [];
 
@@ -313,7 +371,7 @@ app.post('/api/comfy/start', async (req, res) => {
             finalArgs.push(scriptPath);
         }
 
-        if (args) finalArgs.push(...args.split(' '));
+        if (args) finalArgs.push(...parseArgs(args));
 
         try {
             const { exec, spawn } = require('child_process');
@@ -343,12 +401,14 @@ app.post('/api/comfy/start', async (req, res) => {
                 comfyLogs.push("[SYSTEM] Gestartet im Admin-Modus. Logs im externen Fenster.");
             } else {
                 // NORMALER MODUS: Wir fangen den Output ab!
-                const isWin = process.platform === 'win32';
-                // Unter Windows rufen wir cmd /c auf, um .bat Dateien sicher zu starten ohne shell:true im spawn
-                const spawnCmd = isWin ? 'cmd.exe' : command;
-                const spawnArgs = isWin ? ['/c', command, ...finalArgs] : finalArgs;
+                let spawnCommand = command;
+                let spawnArgs = finalArgs;
+                if (path.extname(command).toLowerCase() === '.bat') {
+                    spawnCommand = process.env.COMSPEC || 'cmd.exe';
+                    spawnArgs = ['/c', command, ...finalArgs];
+                }
 
-                comfyProcess = spawn(spawnCmd, spawnArgs, {
+                comfyProcess = spawn(spawnCommand, spawnArgs, {
                     cwd: comfyPath,
                     shell: false
                 });
