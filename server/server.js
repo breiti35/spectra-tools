@@ -23,9 +23,9 @@ app.use(express.static(distPath));
 
 // DB Init
 db.serialize(() => {
-    db.run(`CREATE TABLE IF NOT EXISTS config (key TEXT PRIMARY KEY, value TEXT)`)
+    db.run(`CREATE TABLE IF NOT EXISTS config (key TEXT PRIMARY KEY, value TEXT)`);
     // Neue Tabelle für gespeicherte Ordner-Pfade
-    db.run(`CREATE TABLE IF NOT EXISTS folders (id INTEGER PRIMARY KEY AUTOINCREMENT, path TEXT UNIQUE, label TEXT)`)
+    db.run(`CREATE TABLE IF NOT EXISTS folders (id INTEGER PRIMARY KEY AUTOINCREMENT, path TEXT UNIQUE, label TEXT)`);
 });
 
 // --- HELPER: WINDOWS DRIVES ---
@@ -289,10 +289,10 @@ function parseArgs(input) {
     if (Array.isArray(input)) return input;
     if (typeof input !== 'string') return [];
     const result = [];
-    const re = /"([^"\\]*(?:\\.[^"\\]*)*)"|"([^"]*(?:\\.[^"]*)*)"|'([^'\\]*(?:\\.[^'\\]*)*)'|(\S+)/g;
+    const re = /"([^"\\]*(?:\\.[^"\\]*)*)"|'([^'\\]*(?:\\.[^'\\]*)*)'|(\S+)/g;
     let match;
     while ((match = re.exec(input)) !== null) {
-        const value = match[1] ?? match[2] ?? match[3] ?? match[4];
+        const value = match[1] ?? match[2] ?? match[3];
         result.push(value.replace(/\\(["'])/g, '$1'));
     }
     return result;
