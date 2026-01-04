@@ -1,6 +1,13 @@
-# Changelog - Version 0.1.4 Alpha
+# Changelog - Version 0.1.5 Alpha
 
-Alle aktuellen Änderungen und Optimierungen in der Übersicht.
+## [0.1.5 Alpha] - 2026-01-04
+### Added
+- **Security:** Path Traversal protection for Image View API.
+- **Security:** Command Injection mitigation for ComfyUI start.
+- **Security:** Cloud Mode restrictions for filesystem APIs.
+- **Performance:** Async I/O refactoring for all file operations.
+- **Feature:** Wildcard support in Generator (backend integration).
+- **Docs:** Updated README with security & performance section.
 
 ## [0.1.4 Alpha] - 2026-01-03
 
