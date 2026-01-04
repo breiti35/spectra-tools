@@ -47,24 +47,30 @@ app.get('/api/info', (req, res) => {
 });
 
 // 0. WILDCARDS (Neu!)
-app.get('/api/wildcards', (req, res) => {
+app.get('/api/wildcards', async (req, res) => {
     const wcPath = path.join(__dirname, 'wildcards');
-    if (!fs.existsSync(wcPath)) {
-        fs.mkdirSync(wcPath); // Ordner erstellen falls nicht da
+    try {
+        await fs.promises.access(wcPath);
+    } catch (e) {
+        try {
+            await fs.promises.mkdir(wcPath, { recursive: true }); // Ordner erstellen falls nicht da
+        } catch (mkdirError) {
+            return res.status(500).json({ error: mkdirError.message });
+        }
         return res.json({});
     }
 
     const wildcards = {};
     try {
-        const files = fs.readdirSync(wcPath);
-        files.forEach(file => {
+        const files = await fs.promises.readdir(wcPath);
+        await Promise.all(files.map(async (file) => {
             if (file.endsWith('.txt')) {
                 const key = file.replace('.txt', ''); // "colors.txt" -> "colors"
-                const content = fs.readFileSync(path.join(wcPath, file), 'utf-8');
+                const content = await fs.promises.readFile(path.join(wcPath, file), 'utf-8');
                 // Zeilen trennen und leere entfernen
                 wildcards[key] = content.split(/\r?\n/).filter(line => line.trim() !== '');
             }
-        });
+        }));
         res.json(wildcards);
     } catch (e) {
         res.status(500).json({ error: e.message });
@@ -88,7 +94,7 @@ app.post('/api/config', (req, res) => {
 });
 
 // 1. FOLDER BROWSER (Der Dateimanager)
-app.post('/api/browse', (req, res) => {
+app.post('/api/browse', async (req, res) => {
     if (APP_MODE === 'cloud') return res.status(403).json({ error: "Filesystem browsing is disabled in cloud mode." });
     let currentPath = req.body.path;
 
@@ -103,7 +109,7 @@ app.post('/api/browse', (req, res) => {
     }
 
     try {
-        const items = fs.readdirSync(currentPath, { withFileTypes: true });
+        const items = await fs.promises.readdir(currentPath, { withFileTypes: true });
         const folders = items
             .filter(item => item.isDirectory())
             .map(item => item.name)
@@ -142,28 +148,34 @@ app.delete('/api/folders/:id', (req, res) => {
 });
 
 // 3. IMAGES SCANNER
-app.post('/api/local-images', (req, res) => {
+app.post('/api/local-images', async (req, res) => {
     if (APP_MODE === 'cloud') return res.json({ images: [] });
     // Pfad kommt jetzt direkt vom Frontend (aus dem Dropdown)
     const dir = req.body.path; 
     
-    if (!dir || !fs.existsSync(dir)) return res.json({ images: [] });
+    if (!dir) return res.json({ images: [] });
+    let dirStats;
+    try {
+        dirStats = await fs.promises.stat(dir);
+    } catch (e) {
+        return res.json({ images: [] });
+    }
+    if (!dirStats.isDirectory()) return res.json({ images: [] });
     
     try {
-        const files = fs.readdirSync(dir);
-        const images = files
-            .filter(file => /\.(png|jpg|jpeg|webp)$/i.test(file))
-            .map(file => {
-                const fullPath = path.join(dir, file);
-                try {
-                    const stats = fs.statSync(fullPath);
-                    return {
-                        name: file,
-                        fullPath: fullPath,
-                        mtime: stats.mtimeMs
-                    };
-                } catch(e) { return null; }
-            })
+        const files = await fs.promises.readdir(dir);
+        const imageFiles = files.filter(file => /\.(png|jpg|jpeg|webp)$/i.test(file));
+        const images = (await Promise.all(imageFiles.map(async (file) => {
+            const fullPath = path.join(dir, file);
+            try {
+                const stats = await fs.promises.stat(fullPath);
+                return {
+                    name: file,
+                    fullPath: fullPath,
+                    mtime: stats.mtimeMs
+                };
+            } catch(e) { return null; }
+        })))
             .filter(Boolean)
             .sort((a, b) => b.mtime - a.mtime)
             .slice(0, 100);
