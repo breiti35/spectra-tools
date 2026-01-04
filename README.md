@@ -64,8 +64,6 @@ pormt/
 |   |-- server.js           # Express API & Konfiguration (ComfyUI Steuerung)
 |   |-- database.js         # SQLite Schema-Setup
 |   |-- pormt.db            # Permanente Datenspeicherung
-|-- Agent.md                # Technische Dokumentation für Agenten
-|-- BACKLOG.md              # Geplante Features & Optimierungen
 |-- dev.bat                 # Development-Start (Nodemon + Vite)
 ```
 
