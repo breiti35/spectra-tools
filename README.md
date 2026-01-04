@@ -1,4 +1,4 @@
-# Spectra Tools (v0.1.4 Alpha)
+# Spectra Tools (v0.1.5 Alpha)
 
 Spectra Tools ist eine All-in-One-Suite für KI-Bildgenerierungs-Workflows. Diese Webanwendung vereint leistungsstarke Tools zur Prompt-Erstellung, Bildanalyse und Verwaltung in einer modernen, benutzerfreundlichen Oberfläche.
 
@@ -9,16 +9,28 @@ Spectra Tools ist eine All-in-One-Suite für KI-Bildgenerierungs-Workflows. Dies
 - **Integrierte Konsole:** Verfolge den Server-Status in einem Web-Terminal mit Echtzeit-Logs.
 - **Modell-Browser:** Übersicht über installierte Checkpoints direkt im ComfyUI-Ordner.
 - **Windows-Optimiert:** Unterstützung für portable Versionen (`.bat`-Dateien) und Admin-Rechte.
+- **Sicheres Start-Verfahren:** Gehärtetes Argument-Parsing und Schutz gegen Command-Injection.
 
 ### 🌐 Internationalisierung (i18n)
 - **Vollständige Mehrsprachigkeit:** Unterstützung für Deutsch 🇩🇪 und Englisch 🇺🇸.
 - **Datenbank-Persistenz:** Deine Sprachwahl wird permanent in der SQLite-Datenbank gespeichert.
+
+### 🛡️ Security & Performance (v0.1.5)
+- **Path Traversal Schutz:** Sicherer Dateizugriff in der Galerie durch Root-Ordner-Validierung und Realpath-Auflösung.
+- **Härtung im Cloud-Modus:** Alle sensiblen Dateisystem-Features werden automatisch deaktiviert, wenn `APP_MODE=cloud` gesetzt ist.
+- **Async I/O:** Vollständig auf asynchrone Dateioperationen umgestellt, um die Server-Performance bei großen Datenmengen (z.B. Galerie-Scan) zu maximieren.
+- **CORS Härtung:** Unterstützung für konfigurierbare Origins über Umgebungsvariablen.
 
 ### 🖼️ Optimierter Metadaten-Inspektor
 - **Paste-Support (Strg+V):** Bilder direkt aus der Zwischenablage einfügen.
 - **Strukturierte Parameter:** Automatische Extraktion von Sampler, Steps, CFG Scale und Modell-Informationen (A1111 & ComfyUI).
 - **Direkt-Workflow:** Prompts mit einem Klick (🚀) direkt in den Generator laden.
 - **Prompt-Cleaner:** Bereinigung technischer Tags (`<lora...>`, Gewichte) für sauberes Kopieren.
+
+### ⚡ Advanced Generator & Wildcards
+- **Dynamische Prompts:** Nutze Wildcards wie `__colors__` oder `__artist__` direkt im Prompt.
+- **Auto-Discovery:** Textdateien (`.txt`) im Ordner `server/wildcards/` werden automatisch erkannt.
+- **Smart Replacement:** Zufällige Auswahl einer Zeile aus der Datei bei jeder Generierung (Vorbereitung für Backend-Processing).
 
 ### 🧮 Professional Calculator
 - **Visuelle Vorschau:** Dynamische Darstellung des gewählten Seitenverhältnisses.
