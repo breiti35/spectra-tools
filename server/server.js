@@ -308,9 +308,12 @@ app.post('/api/comfy/start', async (req, res) => {
 
             if (asAdmin) {
                 // ADMIN MODUS: Externes Fenster (Logs nicht direkt abfangbar)
-                const psArgs = finalArgs.map(a => `\\"${a}\\"`).join(',');
-                const adminFlag = "-Verb RunAs";
-                const startCmd = `powershell -Command "Start-Process -FilePath '${command}' ${finalArgs.length > 0 ? `-ArgumentList ${formattedArgs}` : ''} -WorkingDirectory '${comfyPath}' ${adminFlag}"`;
+                const psEscape = (value) => value.replace(/'/g, "''");
+                const psFilePath = psEscape(command);
+                const psWorkingDir = psEscape(comfyPath);
+                const psArgList = finalArgs.map((arg) => `'${psEscape(arg)}'`).join(', ');
+                const argListPart = finalArgs.length > 0 ? `-ArgumentList ${psArgList} ` : '';
+                const startCmd = `powershell -Command "Start-Process -FilePath '${psFilePath}' ${argListPart}-WorkingDirectory '${psWorkingDir}' -Verb RunAs"`;
                 
                 exec(startCmd, (error) => {
                     if (error) console.error(`ComfyUI Start Fehler: ${error}`);
