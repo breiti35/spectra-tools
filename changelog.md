@@ -1,4 +1,11 @@
-# Changelog - Version 0.1.5 Alpha
+# Changelog - Version 0.1.5.1 Alpha
+
+## [0.1.5.1 Alpha] - 2026-01-04
+### Added
+- **UI:** New welcome page (Home) with module descriptions.
+- **UI:** Sidebar navigation update with Home link.
+- **i18n:** New translations for welcome page.
+- **Version:** Bumped to 0.1.5.1.
 
 ## [0.1.5 Alpha] - 2026-01-04
 ### Added

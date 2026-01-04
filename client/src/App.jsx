@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { DB } from './lib/db';
 import { translations } from './lib/i18n';
 import logo from './assets/logo.png';
+import Home from './components/Home';
 import Generator from './components/Generator';
 import Gallery from './components/Gallery';
 import Metadata from './components/Metadata';
@@ -12,6 +13,7 @@ import ComfyManager from './components/ComfyManager';
 
 function Sidebar({ activeTab, setActiveTab, isDark, toggleDark, t, appMode, hasComfy }) {
   const menuItems = [
+    { id: 'home', label: t.home, icon: '🏠' },
     { id: 'generator', label: t.generator, icon: '⚡' },
     { id: 'metadata', label: t.metadata, icon: '🔍' },
     { id: 'calculator', label: t.calculator, icon: '🧮' },
@@ -28,7 +30,7 @@ function Sidebar({ activeTab, setActiveTab, isDark, toggleDark, t, appMode, hasC
             <img src={logo} alt="Spectra Logo" className="w-11 h-11 object-contain" />
             <h1 className="text-xl font-bold tracking-tight text-white">Spectra Tools</h1>
         </div>
-        <div className="text-[10px] text-slate-400 mt-1 ml-14 font-mono uppercase tracking-widest opacity-70">{t.version} 0.1.5 Alpha</div>
+        <div className="text-[10px] text-slate-400 mt-1 ml-14 font-mono uppercase tracking-widest opacity-70">{t.version} 0.1.5.1 Alpha</div>
       </div>
       
       <nav className="flex-1 py-6 px-3 space-y-2">
@@ -62,7 +64,7 @@ function Sidebar({ activeTab, setActiveTab, isDark, toggleDark, t, appMode, hasC
 }
 
 function App() {
-  const [activeTab, setActiveTab] = useState('generator');
+  const [activeTab, setActiveTab] = useState('home');
   const [isDark, setIsDark] = useState(false);
   const [lang, setLang] = useState('de');
   const [appMode, setAppMode] = useState('local');
@@ -153,20 +155,29 @@ function App() {
         <div className="max-w-7xl mx-auto">
           
           {/* Header Bereich */}
-          <header className="mb-10 flex justify-between items-end">
-            <div>
-              <h2 className="text-3xl font-bold text-slate-800 dark:text-white capitalize">
-                {t[activeTab]}
-              </h2>
-              <p className="text-gray-500 dark:text-gray-400 mt-1">
-                {t.studioSub}
-              </p>
-            </div>
-          </header>
+          {activeTab !== 'home' && (
+            <header className="mb-10 flex justify-between items-end">
+              <div>
+                <h2 className="text-3xl font-bold text-slate-800 dark:text-white capitalize">
+                  {t[activeTab]}
+                </h2>
+                <p className="text-gray-500 dark:text-gray-400 mt-1">
+                  {t.studioSub}
+                </p>
+              </div>
+            </header>
+          )}
 
           {/* View Container */}
           <section className="bg-white dark:bg-zinc-900 rounded-3xl shadow-xl shadow-gray-200/50 dark:shadow-none p-6 md:p-8 min-h-[calc(100vh-200px)] border border-gray-100 dark:border-zinc-800 relative overflow-hidden transition-colors duration-200">
             
+            {activeTab === 'home' && (
+              <Home 
+                 setActiveTab={setActiveTab} 
+                 t={t}
+              />
+            )}
+
             {activeTab === 'generator' && (
               <Generator 
                  initialData={loadedData} 

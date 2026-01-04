@@ -28,6 +28,13 @@ export const translations = {
     comfyPathPlaceholder: "z.B. C:\\KI\\ComfyUI_windows_portable",
     version: "Version",
     studioSub: "Dein AI Workflow Studio.",
+    home: "Startseite",
+    welcomeSub: "Willkommen in deinem AI Workflow Studio. Alles, was du für professionelles Prompt-Engineering und Bildverwaltung brauchst.",
+    readyToStart: "← Wähle ein Modul aus der Navigation.",
+    generatorDesc: "Erstelle komplexe Prompts mit Wildcards, Presets und Zufallsfunktionen. Inklusive History und Favoriten.",
+    metadataDesc: "Lese versteckte Generation-Infos (A1111 & ComfyUI) aus Bildern aus und sende sie direkt zurück in den Generator.",
+    galleryDesc: "Scanne lokale Ordner, organisiere deine Werke und finde deine Favoriten blitzschnell wieder.",
+    comfyDescShort: "Starte deinen lokalen Server, überwache Live-Logs und verwalte installierte Checkpoints.",
 
     // Generator
     promptIdea: "Dein Motiv / Idee",
@@ -199,6 +206,13 @@ export const translations = {
         comfyPathPlaceholder: "e.g., C:\\AI\\ComfyUI_windows_portable",
         version: "Version",
     studioSub: "Your AI Workflow Studio.",
+    home: "Home",
+    welcomeSub: "Welcome to your AI Workflow Studio. Everything you need for professional prompt engineering and image management.",
+    readyToStart: "← Select a module from the navigation menu.",
+    generatorDesc: "Create complex prompts with wildcards, presets, and randomization. Includes history and favorites.",
+    metadataDesc: "Extract hidden generation info (A1111 & ComfyUI) from images and send it back to the generator.",
+    galleryDesc: "Scan local folders, organize your creations, and find your favorites instantly.",
+    comfyDescShort: "Start your local server, monitor live logs, and manage installed checkpoints.",
 
     // Generator
     promptIdea: "Your Subject / Idea",

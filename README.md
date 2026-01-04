@@ -1,4 +1,4 @@
-# Spectra Tools (v0.1.5 Alpha)
+# Spectra Tools (v0.1.5.1 Alpha)
 
 Spectra Tools ist eine All-in-One-Suite für KI-Bildgenerierungs-Workflows. Diese Webanwendung vereint leistungsstarke Tools zur Prompt-Erstellung, Bildanalyse und Verwaltung in einer modernen, benutzerfreundlichen Oberfläche.
 
