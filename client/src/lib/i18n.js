@@ -115,6 +115,10 @@ export const translations = {
 
     // Library
     promptLib: "Prompt Bibliothek",
+    addPrompt: "Prompt hinzufügen",
+    enterPrompt: "Prompt eingeben...",
+    enterNegative: "Negative Prompt (optional)...",
+    enterTags: "Tags (Komma getrennt)...",
     search: "Suchen...",
     loadingLib: "Lade Bibliothek...",
     nothingFound: "Nichts gefunden.",
@@ -293,6 +297,10 @@ export const translations = {
 
     // Library
     promptLib: "Prompt Library",
+    addPrompt: "Add Prompt",
+    enterPrompt: "Enter prompt...",
+    enterNegative: "Negative prompt (optional)...",
+    enterTags: "Tags (comma separated)...",
     search: "Search...",
     loadingLib: "Loading library...",
     nothingFound: "Nothing found.",

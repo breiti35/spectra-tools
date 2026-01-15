@@ -80,6 +80,36 @@ export default function Library({ onLoadItem, t }) {
     setItems(prev => prev.map(item => item.id === id ? { ...item, isFavorite: status } : item));
   };
 
+  const [showAddModal, setShowAddModal] = useState(false);
+  const [newPrompt, setNewPrompt] = useState("");
+  const [newNegative, setNewNegative] = useState("");
+  const [newTags, setNewTags] = useState("");
+
+  const handleSaveNew = async () => {
+    if (!newPrompt.trim()) return alert(t.ideaError);
+    
+    const newItem = {
+        prompt: newPrompt,
+        negative: newNegative,
+        tags: newTags.split(',').map(t => t.trim()).filter(Boolean),
+        date: new Date().toISOString(),
+        isFavorite: false,
+        settings: {}
+    };
+
+    try {
+        await DB.addItem(newItem);
+        // Refresh to get the ID from DB (re-loading is safer to sync IDs)
+        loadData();
+        setShowAddModal(false);
+        setNewPrompt("");
+        setNewNegative("");
+        setNewTags("");
+    } catch (e) {
+        alert(t.saveError);
+    }
+  };
+
   const filteredAndSortedItems = items
     .filter(i => 
       i.prompt.toLowerCase().includes(search.toLowerCase()) || 
@@ -109,6 +139,12 @@ export default function Library({ onLoadItem, t }) {
                        {t.clearLibrary}
                    </button>
                )}
+               <button 
+                onClick={() => setShowAddModal(true)}
+                className="text-[10px] font-bold uppercase tracking-widest text-blue-500 hover:text-blue-600 bg-blue-50 dark:bg-blue-900/10 px-3 py-1.5 rounded-lg border border-blue-100 dark:border-blue-900/20 transition-all"
+               >
+                   + {t.addPrompt}
+               </button>
            </div>
            
            <div className="flex w-full md:w-auto gap-3">
@@ -160,6 +196,66 @@ export default function Library({ onLoadItem, t }) {
                </div>
            )}
        </div>
+
+       {/* Add Modal */}
+       {showAddModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4 animate-fade-in">
+            <div className="bg-white dark:bg-zinc-800 rounded-2xl shadow-2xl w-full max-w-lg border border-gray-100 dark:border-zinc-700 overflow-hidden flex flex-col max-h-[90vh]">
+                <div className="p-4 border-b border-gray-100 dark:border-zinc-700 flex justify-between items-center bg-gray-50/50 dark:bg-zinc-900/50">
+                    <h3 className="font-bold text-gray-800 dark:text-gray-100">{t.addPrompt}</h3>
+                    <button onClick={() => setShowAddModal(false)} className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200">✕</button>
+                </div>
+                
+                <div className="p-6 overflow-y-auto space-y-4">
+                    <div>
+                        <label className="block text-xs font-bold text-gray-500 uppercase mb-1">{t.promptIdea}</label>
+                        <textarea 
+                            className="w-full p-3 rounded-xl border border-gray-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 text-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 outline-none transition-all resize-none h-32"
+                            placeholder={t.enterPrompt}
+                            value={newPrompt}
+                            onChange={e => setNewPrompt(e.target.value)}
+                        />
+                    </div>
+                    
+                    <div>
+                        <label className="block text-xs font-bold text-gray-500 uppercase mb-1">{t.negativePrompt}</label>
+                        <textarea 
+                            className="w-full p-3 rounded-xl border border-gray-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 text-sm focus:border-red-500 focus:ring-2 focus:ring-red-500/20 outline-none transition-all resize-none h-24"
+                            placeholder={t.enterNegative}
+                            value={newNegative}
+                            onChange={e => setNewNegative(e.target.value)}
+                        />
+                    </div>
+
+                    <div>
+                        <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Tags</label>
+                        <input 
+                            type="text"
+                            className="w-full p-3 rounded-xl border border-gray-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 text-sm focus:border-blue-500 outline-none transition-all"
+                            placeholder={t.enterTags}
+                            value={newTags}
+                            onChange={e => setNewTags(e.target.value)}
+                        />
+                    </div>
+                </div>
+
+                <div className="p-4 border-t border-gray-100 dark:border-zinc-700 flex justify-end gap-2 bg-gray-50/50 dark:bg-zinc-900/50">
+                    <button 
+                        onClick={() => setShowAddModal(false)}
+                        className="px-4 py-2 rounded-xl text-sm font-medium text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-zinc-700 transition-colors"
+                    >
+                        {t.cancel}
+                    </button>
+                    <button 
+                        onClick={handleSaveNew}
+                        className="px-4 py-2 rounded-xl text-sm font-bold text-white bg-blue-600 hover:bg-blue-700 shadow-lg shadow-blue-500/30 transition-all transform active:scale-95"
+                    >
+                        {t.save}
+                    </button>
+                </div>
+            </div>
+        </div>
+       )}
     </div>
   );
 }
