@@ -1,4 +1,14 @@
-# Changelog - Version 0.1.5.1 Alpha
+# Changelog - Version 0.1.5.2 Alpha
+
+## [0.1.5.2 Alpha] - 2026-01-17
+### Fixed
+- **Library:** Negative prompts are now correctly displayed in the library cards.
+- **Library:** Fixed a bug where copying a prompt would fail due to variable shadowing.
+- **Database:** Corrected mapping of `negative_prompt` field from API response.
+- **Stability:** Extensive code refactoring to resolve linter errors (hoisting, unused variables) across all components.
+
+### Added
+- **Linux Support:** Added helper scripts (`dev.sh`, `start.sh`, `build.sh`) for easier usage on Linux/Unix systems.
 
 ## [0.1.5.1 Alpha] - 2026-01-04
 ### Added

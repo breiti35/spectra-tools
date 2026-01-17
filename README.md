@@ -1,4 +1,4 @@
-# Spectra Tools (v0.1.5.1 Alpha)
+# Spectra Tools (v0.1.5.2 Alpha)
 
 <div align="center">
   <img src="docs/preview.png" alt="Spectra Tools Dashboard" width="100%" />
@@ -7,6 +7,10 @@
 Spectra Tools ist eine All-in-One-Suite für KI-Bildgenerierungs-Workflows. Diese Webanwendung vereint leistungsstarke Tools zur Prompt-Erstellung, Bildanalyse und Verwaltung in einer modernen, benutzerfreundlichen Oberfläche.
 
 ## Aktuelle Updates & Features
+
+### 🐧 Linux Support (Neu in v0.1.5.2)
+- **Native Skripte:** Nutze `./dev.sh`, `./start.sh` und `./build.sh` für eine nahtlose Erfahrung unter Linux/macOS.
+- **Bugfixes:** Verbesserte Stabilität durch Code-Refactoring und Fixes bei der Anzeige von negativen Prompts.
 
 ### 🧩 ComfyUI Integration (Neu!)
 - **Control Center:** Starte und stoppe ComfyUI direkt aus der App heraus.
