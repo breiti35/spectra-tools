@@ -1,11 +1,6 @@
 // client/src/lib/metadata.js
 import { bytesToString } from './utils';
 
-// Helper: Robusterer String-Cleanup
-function cleanString(str) {
-  return str.replace(/\0/g, '').trim();
-}
-
 export const extractA1111 = (text) => {
   if (!text) return null;
   const hasSteps = text.includes("Steps:");

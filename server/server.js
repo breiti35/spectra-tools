@@ -263,7 +263,7 @@ app.post('/api/gallery', (req, res) => {
 
 app.delete('/api/gallery/:id', (req, res) => {
     db.run('DELETE FROM gallery WHERE id = ?', req.params.id, function(err) {
-        if (err) res.status(400).json({ "error": res.message });
+        if (err) res.status(400).json({ "error": err.message });
         else res.json({ message: "deleted" });
     });
 });

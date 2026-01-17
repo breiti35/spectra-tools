@@ -49,6 +49,7 @@ export default function Calculator({ t }) {
 
   useEffect(() => {
     calculateDimensions(activeRatio, orientation, baseRes, rounding);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [baseRes, orientation, rounding]);
 
   const handleRatioClick = (r) => {

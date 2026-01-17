@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { DB } from '../lib/db';
 
 export default function ComfyManager({ comfyPath, t }) {
@@ -8,34 +8,25 @@ export default function ComfyManager({ comfyPath, t }) {
     const [isLoadingModels, setIsLoadingModels] = useState(false);
     const logContainerRef = React.useRef(null);
 
-    useEffect(() => {
-        checkStatus();
-        loadModels();
-        fetchLogs();
-        
-        const interval = setInterval(() => {
-            checkStatus();
-            fetchLogs();
-        }, 3000);
-        return () => clearInterval(interval);
+    const checkStatus = useCallback(async () => {
+        try {
+            const res = await fetch('/api/comfy/status');
+            const data = await res.json();
+            setStatus(data.running ? 'running' : 'offline');
+        } catch {
+            setStatus('offline');
+        }
     }, []);
 
-    useEffect(() => {
-        // Korrigierter Auto-Scroll: Nur den Container scrollen
-        if (logContainerRef.current) {
-            logContainerRef.current.scrollTop = logContainerRef.current.scrollHeight;
-        }
-    }, [logs]);
-
-    const fetchLogs = async () => {
+    const fetchLogs = useCallback(async () => {
         try {
             const res = await fetch('/api/comfy/logs');
             const data = await res.json();
             setLogs(data.logs || []);
         } catch { /* ignore */ }
-    };
+    }, []);
 
-    const loadModels = async () => {
+    const loadModels = useCallback(async () => {
         if (!comfyPath) return;
         setIsLoadingModels(true);
         try {
@@ -51,7 +42,26 @@ export default function ComfyManager({ comfyPath, t }) {
         } finally {
             setIsLoadingModels(false);
         }
-    };
+    }, [comfyPath]);
+
+    useEffect(() => {
+        checkStatus();
+        loadModels();
+        fetchLogs();
+
+        const interval = setInterval(() => {
+            checkStatus();
+            fetchLogs();
+        }, 3000);
+        return () => clearInterval(interval);
+    }, [checkStatus, fetchLogs, loadModels]);
+
+    useEffect(() => {
+        // Korrigierter Auto-Scroll: Nur den Container scrollen
+        if (logContainerRef.current) {
+            logContainerRef.current.scrollTop = logContainerRef.current.scrollHeight;
+        }
+    }, [logs]);
 
     const handleStart = async () => {
         setStatus('starting');

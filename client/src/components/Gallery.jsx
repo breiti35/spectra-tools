@@ -34,6 +34,7 @@ const ImageDetailModal = ({ file, imageUrl, onClose, onUsePrompt, t }) => {
 
     useEffect(() => {
         analyze();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [file]);
 
     const analyze = async () => {
@@ -134,6 +135,7 @@ export default function Gallery({ onAnalyzeImage, t }) {
       } else {
           setLocalFiles([]);
       }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedFolderId]);
 
   const openLightbox = (file, url) => {

@@ -72,7 +72,6 @@ function App() {
   
   // Data Passing States
   const [loadedData, setLoadedData] = useState(null); // Gallery -> Generator (Prompt Data)
-  const [analyzeUrl, setAnalyzeUrl] = useState(null); // Gallery -> Metadata (Image URL)
   
   const t = translations[lang];
 
@@ -84,7 +83,7 @@ function App() {
 
   useEffect(() => {
     const initApp = async () => {
-        await DB.init().catch(err => console.error(t.backendOffline));
+        await DB.init().catch(() => console.error(t.backendOffline));
         
         // App Info laden (Mode)
         const info = await DB.getAppInfo();
@@ -130,11 +129,6 @@ function App() {
   const handleLoadPrompt = (item) => {
       setLoadedData(item);
       setActiveTab('generator');
-  };
-
-  const handleAnalyzeImage = (url) => {
-      setAnalyzeUrl(url);
-      setActiveTab('metadata');
   };
 
   return (
@@ -187,10 +181,10 @@ function App() {
             )}
             
             {activeTab === 'metadata' && (
-              <Metadata 
-                initialImageUrl={analyzeUrl} 
+              <Metadata
+                initialImageUrl={null}
                 onUsePrompt={handleLoadPrompt}
-                t={t} 
+                t={t}
               />
             )}
 
