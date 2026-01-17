@@ -32,3 +32,4 @@ BACKLOG.md
 server/wildcards/*
 !server/wildcards/README.md
 ai/audit.todo.md
+CLAUDE.md
