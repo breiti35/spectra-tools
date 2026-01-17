@@ -110,18 +110,6 @@ export default function Gallery({ onAnalyzeImage, t }) {
   const [selectedFolderId, setSelectedFolderId] = useState("");
   const [selectedFile, setSelectedFile] = useState(null); 
 
-  useEffect(() => { init(); }, []);
-
-  // Wenn Dropdown gewechselt wird
-  useEffect(() => {
-      if(selectedFolderId) {
-          const folder = savedFolders.find(f => f.id === parseInt(selectedFolderId));
-          if(folder) loadFiles(folder.path);
-      } else {
-          setLocalFiles([]);
-      }
-  }, [selectedFolderId]);
-
   const init = async () => {
       const folders = await DB.getFolders();
       setSavedFolders(folders);
@@ -135,6 +123,18 @@ export default function Gallery({ onAnalyzeImage, t }) {
       setLocalFiles(files);
       setLoading(false);
   };
+
+  useEffect(() => { init(); }, []);
+
+  // Wenn Dropdown gewechselt wird
+  useEffect(() => {
+      if(selectedFolderId) {
+          const folder = savedFolders.find(f => f.id === parseInt(selectedFolderId));
+          if(folder) loadFiles(folder.path);
+      } else {
+          setLocalFiles([]);
+      }
+  }, [selectedFolderId]);
 
   const openLightbox = (file, url) => {
       setSelectedFile({ file, url });

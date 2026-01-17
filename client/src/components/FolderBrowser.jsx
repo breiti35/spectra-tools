@@ -6,22 +6,21 @@ export default function FolderBrowser({ isOpen, onClose, onSelect, t }) {
     const [items, setItems] = useState([]);
     const [parent, setParent] = useState("");
 
-    useEffect(() => {
-        if(isOpen) loadPath("");
-    }, [isOpen]);
-
-    const loadPath = async (p) => {
-        try {
-            const data = await DB.browsePath(p);
-            setItems(data.folders || []);
-            setCurrentPath(data.currentPath || "");
-            setParent(data.parentPath || "");
-        } catch(e) { 
-            console.error(e);
-            alert(t.accessDenied);
-        }
-    };
-
+        const loadPath = async (p) => {
+            try {
+                const data = await DB.browsePath(p);
+                setItems(data.folders);
+                setCurrentPath(data.currentPath);
+                setParent(data.parentPath);
+            } catch (e) {
+                console.error(e);
+                alert("Fehler beim Laden des Pfades");
+            }
+        };
+    
+        useEffect(() => {
+            if(isOpen) loadPath("");
+        }, [isOpen]);
     if(!isOpen) return null;
 
     return (

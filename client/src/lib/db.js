@@ -4,24 +4,22 @@ export const DB = {
     apiUrl: '/api/gallery',
 
     async init() {
-        try {
-            const res = await fetch(this.apiUrl);
-            return res.ok;
-        } catch(e) { throw e; }
+        const res = await fetch(this.apiUrl);
+        return res.ok;
     },
 
     async getAppInfo() {
         try {
             const res = await fetch('/api/info');
             return await res.json();
-        } catch(e) { return { mode: 'local' }; }
+        } catch { return { mode: 'local' }; }
     },
 
     async getWildcards() {
         try {
             const res = await fetch('/api/wildcards');
             return await res.json();
-        } catch(e) { return {}; }
+        } catch { return {}; }
     },
 
     // --- PROMPTS ---
@@ -39,13 +37,14 @@ export const DB = {
             return json.data.map(entry => ({ 
                 id: entry.id, 
                 prompt: entry.prompt, 
+                negative: entry.negative_prompt,
                 seed: entry.seed, 
                 tags: entry.tags, 
                 date: entry.created_at, 
                 isFavorite: entry.is_favorite === 1,
                 ...entry.settings 
             }));
-        } catch (e) { return []; }
+        } catch { return []; }
     },
 
     async deleteItem(id) {
@@ -73,7 +72,7 @@ export const DB = {
             const res = await fetch(`/api/config/${key}`);
             const json = await res.json();
             return json.value;
-        } catch(e) { return null; }
+        } catch { return null; }
     },
 
     async setConfig(key, value) {
@@ -90,7 +89,7 @@ export const DB = {
         try {
             const res = await fetch('/api/folders');
             return await res.json();
-        } catch(e) { return []; }
+        } catch { return []; }
     },
 
     async addFolder(path, label) {

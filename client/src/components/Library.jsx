@@ -29,6 +29,15 @@ const PromptCard = ({ item, onDelete, onCopy, onLoad, onToggleFavorite, t }) => 
           {item.prompt}
         </p>
 
+        {item.negative && (
+          <div className="mb-6 p-3 rounded-xl bg-red-50/50 dark:bg-red-900/10 border border-red-100/50 dark:border-red-900/20">
+            <span className="text-[10px] uppercase font-black text-red-400 dark:text-red-500/70 block mb-1">{t.negativePrompt}</span>
+            <p className="text-xs text-red-700/70 dark:text-red-400/60 line-clamp-2 italic leading-relaxed">
+              {item.negative}
+            </p>
+          </div>
+        )}
+
         <div className="flex items-center justify-between border-t border-gray-50 dark:border-zinc-700/50 pt-4 mt-auto">
           <span className="text-[10px] text-gray-400 uppercase font-bold tracking-wider">
             {new Date(item.date).toLocaleDateString()}
@@ -50,16 +59,16 @@ export default function Library({ onLoadItem, t }) {
   const [loading, setLoading] = useState(true);
   const [sortBy, setSortBy] = useState("newest"); // newest, oldest, favorites
 
-  useEffect(() => {
-    loadData();
-  }, []);
-
   const loadData = async () => {
     setLoading(true);
     const data = await DB.getAllItems();
     setItems(data);
     setLoading(false);
   };
+
+  useEffect(() => {
+    loadData();
+  }, []);
 
   const handleDelete = async (id) => {
     if(!window.confirm(t.deleteConfirm)) return;
@@ -105,7 +114,7 @@ export default function Library({ onLoadItem, t }) {
         setNewPrompt("");
         setNewNegative("");
         setNewTags("");
-    } catch (e) {
+    } catch {
         alert(t.saveError);
     }
   };
@@ -187,7 +196,7 @@ export default function Library({ onLoadItem, t }) {
                            key={item.id} 
                            item={item} 
                            onDelete={handleDelete}
-                           onCopy={(t) => { navigator.clipboard.writeText(t); alert(t.copySuccess); }}
+                           onCopy={(text) => { navigator.clipboard.writeText(text); alert(t.copySuccess); }}
                            onLoad={onLoadItem}
                            onToggleFavorite={handleToggleFavorite}
                            t={t}

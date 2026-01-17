@@ -32,17 +32,7 @@ export default function ComfyManager({ comfyPath, t }) {
             const res = await fetch('/api/comfy/logs');
             const data = await res.json();
             setLogs(data.logs || []);
-        } catch (e) {}
-    };
-
-    const checkStatus = async () => {
-        try {
-            const res = await fetch('/api/comfy/status');
-            const data = await res.json();
-            setStatus(data.running ? 'running' : 'offline');
-        } catch (e) {
-            setStatus('offline');
-        }
+        } catch { /* ignore */ }
     };
 
     const loadModels = async () => {
@@ -56,7 +46,7 @@ export default function ComfyManager({ comfyPath, t }) {
             });
             const data = await res.json();
             setModels(data.models || []);
-        } catch (e) {
+        } catch {
             console.error("Modelle konnten nicht geladen werden");
         } finally {
             setIsLoadingModels(false);
@@ -79,7 +69,7 @@ export default function ComfyManager({ comfyPath, t }) {
                 alert(data.error || "Start fehlgeschlagen");
                 setStatus('offline');
             }
-        } catch (e) {
+        } catch {
             alert("Serverfehler beim Starten");
             setStatus('offline');
         }
@@ -90,7 +80,7 @@ export default function ComfyManager({ comfyPath, t }) {
         try {
             await fetch('/api/comfy/stop', { method: 'POST' });
             setTimeout(checkStatus, 1000);
-        } catch (e) {}
+        } catch { /* ignore */ }
     };
 
     const handleClearLogs = async () => {
@@ -98,7 +88,7 @@ export default function ComfyManager({ comfyPath, t }) {
             await fetch('/api/comfy/logs/clear', { method: 'POST' });
             // Sofortige Abfrage nach dem Löschen, um den Buffer-Status vom Server zu holen
             await fetchLogs();
-        } catch(e) {}
+        } catch { /* ignore */ }
     };
 
     return (

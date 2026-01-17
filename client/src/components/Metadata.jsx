@@ -71,9 +71,9 @@ export default function Metadata({ initialImageUrl, onUsePrompt, t }) {
       // Entfernt <lora:...>, <hypernet:...> und Gewichte wie (word:1.2) -> word
       return text
         .replace(/<[^>]+>/g, '') // LoRA/Hypernet
-        .replace(/\(([^:]+):[^\)]+\)/g, '$1') // (word:1.2) -> word
-        .replace(/\(([^:\)]+)\)/g, '$1') // (word) -> word
-        .replace(/\[([^:\)]+)\]/g, '$1') // [word] -> word
+        .replace(/\(([^:]+):[^)]+\)/g, '$1') // (word:1.2) -> word
+        .replace(/\(([^:)]+)\)/g, '$1') // (word) -> word
+        .replace(/\[([^:)]+)\]/g, '$1') // [word] -> word
         .replace(/\s+/g, ' ') // Doppelte Leerzeichen
         .trim();
   };

@@ -10,82 +10,66 @@ export default function Settings({ lang, setLang, t, appMode, onConfigChange }) 
 
   const [comfyPath, setComfyPath] = useState('');
 
-      const [comfyArgs, setComfyArgs] = useState('');
+  const [comfyArgs, setComfyArgs] = useState('');
 
-      const [comfyAdmin, setComfyAdmin] = useState(false);
+  const [comfyAdmin, setComfyAdmin] = useState(false);
 
-      const [comfyMethod, setComfyMethod] = useState('default');
-
-    
-
-      useEffect(() => {
-
-        if (appMode === 'local') {
-
-            loadFolders();
-
-            loadComfyConfig();
-
-        }
-
-      }, [appMode]);
-
-    
-
-      const loadComfyConfig = async () => {
-
-        const p = await DB.getConfig('comfyPath');
-
-        const a = await DB.getConfig('comfyArgs');
-
-        const adm = await DB.getConfig('comfyAdmin');
-
-        const meth = await DB.getConfig('comfyMethod');
-
-        if(p) setComfyPath(p);
-
-        if(a) setComfyArgs(a);
-
-        if(adm) setComfyAdmin(adm === 'true');
-
-        if(meth) setComfyMethod(meth);
-
-      };
-
-    
-
-      const handleSaveComfy = async () => {
-
-          await DB.setConfig('comfyPath', comfyPath);
-
-          await DB.setConfig('comfyArgs', comfyArgs);
-
-          await DB.setConfig('comfyAdmin', comfyAdmin ? 'true' : 'false');
-
-          await DB.setConfig('comfyMethod', comfyMethod);
-
-          if(onConfigChange) onConfigChange('comfyPath', comfyPath);
-
-          alert(t.saved);
-
-      };
-
-    
-
-  
-
-
-
-
-
-
+  const [comfyMethod, setComfyMethod] = useState('default');
 
   const loadFolders = async () => {
-
       const f = await DB.getFolders();
-
       setFolders(f);
+  };
 
+  const loadComfyConfig = async () => {
+    const p = await DB.getConfig('comfyPath');
+    const a = await DB.getConfig('comfyArgs');
+    const adm = await DB.getConfig('comfyAdmin');
+    const meth = await DB.getConfig('comfyMethod');
+    if(p) setComfyPath(p);
+    if(a) setComfyArgs(a);
+    if(adm) setComfyAdmin(adm === 'true');
+    if(meth) setComfyMethod(meth);
+  };
+
+  useEffect(() => {
+    // Lade Basis-Konfigurationen
+    const load = async () => {
+        // ... (Settings laden) ...
+        const keys = [
+            'format', 'preset', 'realism', 'sceneType', 'seedLock', 
+            'cameraType', 'lens', 'aperture', 'light', 'weather', 
+            'time', 'gender', 'age', 'clothing',
+            'theme', 'language' // + Theme & Lang
+        ];
+        const newConf = {};
+        for(let key of keys) {
+            const val = await DB.getConfig(key);
+            if(val) newConf[key] = val;
+        }
+
+        // Init Language
+        if(newConf.language) setLang(newConf.language);
+
+        // Init Theme
+        if(newConf.theme === 'dark') document.documentElement.classList.add('dark');
+        else document.documentElement.classList.remove('dark');
+
+        if (appMode === 'local') {
+            loadFolders();
+            loadComfyConfig();
+        }
+    };
+    load();
+  }, [appMode]);
+
+  const handleSaveComfy = async () => {
+      await DB.setConfig('comfyPath', comfyPath);
+      await DB.setConfig('comfyArgs', comfyArgs);
+      await DB.setConfig('comfyAdmin', comfyAdmin ? 'true' : 'false');
+      await DB.setConfig('comfyMethod', comfyMethod);
+      if(onConfigChange) onConfigChange('comfyPath', comfyPath);
+      alert(t.saved);
   };
 
 
@@ -144,47 +128,47 @@ export default function Settings({ lang, setLang, t, appMode, onConfigChange }) 
 
       document.body.appendChild(a);
 
-      a.click();
+            a.click();
 
-      document.body.removeChild(a);
+            document.body.removeChild(a);
 
-    } catch (e) {
+          } catch (e) {
 
-      alert("Error: " + e.message);
+            alert("Error: " + e.message);
 
-    }
+          }
 
-  };
+        };
 
+      
 
+        const handleReset = async () => {
 
-  const handleReset = async () => {
+          if (!window.confirm(t.resetWarning)) return;
 
-    if (!window.confirm(t.resetWarning)) return;
+          if (!window.confirm(t.resetConfirm)) return;
 
-    if (!window.confirm(t.resetConfirm)) return;
+      
 
+          try {
 
+             const data = await DB.getAllItems();
 
-    try {
+             for (const item of data) {
 
-       const data = await DB.getAllItems();
+                 await DB.deleteItem(item.id);
 
-       for (const item of data) {
+             }
 
-           await DB.deleteItem(item.id);
+             alert(t.dbCleared);
 
-       }
+          } catch {
 
-       alert(t.dbCleared);
+             alert("Error resetting database.");
 
-    } catch(e) {
+          }
 
-       alert("Error resetting database.");
-
-    }
-
-  };
+        };
 
 
 

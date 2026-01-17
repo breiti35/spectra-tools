@@ -99,15 +99,7 @@ export default function Generator({ initialData, onDataLoaded, t }) {
 
   // Helper: Wildcards auflösen (mit Tracking)
   const resolveWildcards = (text) => {
-      let resolved = text;
-      const replacements = [];
-      
-      // Wir nutzen eine Schleife, um Positionen korrekt zu tracken
-      // Achtung: Wenn sich die Länge ändert, verschieben sich Indizes.
-      // Einfacherer Ansatz: Wir speichern den "Original-Key" im Output-Objekt nicht per Index,
-      // sondern wir markieren den Text direkt.
-      // BESSER: Wir bauen den String neu und merken uns die "Parts".
-      
+      // Wir bauen den String neu und merken uns die "Parts".
       const parts = [];
       let lastIndex = 0;
       const regex = /__(\w+)__/g;
@@ -122,11 +114,9 @@ export default function Generator({ initialData, onDataLoaded, t }) {
           const key = match[1];
           const list = wildcards[key];
           let replacement = match[0]; // Fallback: __key__
-          let isWildcard = false;
 
           if (list && list.length > 0) {
               replacement = list[Math.floor(Math.random() * list.length)];
-              isWildcard = true;
           }
 
           parts.push({ type: 'wildcard', value: replacement, original: `__${key}__` });
@@ -160,16 +150,8 @@ export default function Generator({ initialData, onDataLoaded, t }) {
     // Wir übergeben den REINEN Text an den Builder, damit Styles etc. angewendet werden
     const result = buildPrompt({ ...formData, promptIdea: finalString, seed: finalSeed });
     
-    // Aber für die Anzeige merken wir uns, dass der "Idea-Part" aus Wildcards besteht
-    // Da buildPrompt den Text noch mit Styles umschließt, ist das Mapping schwierig.
-    // TRICK: Wir speichern die "Parts" nur für den Idea-Teil und rendern diesen speziell,
-    // oder wir speichern einfach den gesamten finalen Text und die Info, welche Wörter Wildcards waren.
-    
     // VEREINFACHUNG FÜR UX:
     // Wir speichern das "parts" Array im Output.
-    // Wenn der User Styles nutzt, wird das Mapping komplex.
-    // Daher: Wir zeigen im Output VORERST nur den finalen Text an.
-    // ABER: Wir markieren die Wildcards, indem wir sie im State speichern.
     
     const newOutput = { 
         text: result.prompt, 
@@ -222,7 +204,7 @@ export default function Generator({ initialData, onDataLoaded, t }) {
     try {
         await DB.addItem({ id: Date.now().toString(), prompt: output.text, tags: output.tags, seed: output.seed, date: new Date().toISOString(), negative: formData.negative, settings: formData });
         alert(t.saved);
-    } catch(e) { alert(t.saveError); }
+    } catch { alert(t.saveError); }
   };
 
   const copyToClipboard = () => {
