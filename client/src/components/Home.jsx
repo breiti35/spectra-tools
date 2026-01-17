@@ -45,7 +45,7 @@ export default function Home({ t }) {
       
       {/* Ready to Start hint */}
       <div className="mt-16 pt-8 border-t border-gray-100 dark:border-zinc-800/50 w-full max-w-lg text-xs text-slate-400 dark:text-zinc-600 font-medium tracking-wide flex justify-between items-center">
-        <span>{t.version} 0.1.5.1 Alpha</span>
+        <span>{t.version} 0.1.5.2 Alpha</span>
         <span>{t.readyToStart || "← WÄHLE EIN MODUL AUS DER NAVIGATION"}</span>
       </div>
 
